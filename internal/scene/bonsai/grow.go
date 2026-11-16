@@ -77,6 +77,10 @@ func simulate(seed uint64, w, h int) tree {
 		g.finish()
 		return g.t
 	}
+	// In a tall, narrow pane the tree would turn into a pole. Terminal cells
+	// are about twice as tall as wide, so a crown ~w cells wide looks right
+	// on a tree about w/2 rows tall: cap the height the tree plans for.
+	areaH = min(areaH, max(3, w*55/100))
 	g.leafR = min(max(areaH/8, 1), 3)
 	g.nextSide = []int{-1, 1}[g.rng.IntN(2)]
 

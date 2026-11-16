@@ -125,6 +125,23 @@ func TestGrowthRevealsEvenly(t *testing.T) {
 	}
 }
 
+// TestTallPaneKeepsProportions: in a tall, narrow pane the tree must stay
+// tree-shaped instead of growing a trunk as tall as the screen.
+func TestTallPaneKeepsProportions(t *testing.T) {
+	const w, h = 58, 70
+	for _, seed := range []uint64{1, 2, 3, testSeed, 99, 12345} {
+		tr := simulate(seed, w, h)
+		top := h
+		for _, m := range tr.marks {
+			top = min(top, m.y)
+		}
+		// About as tall as half the width looks like a tree; much more is a pole.
+		if treeH := tr.baseY - top + 1; treeH > w/2 {
+			t.Errorf("seed %d: tree is %d rows tall in a %dx%d pane, want at most %d", seed, treeH, w, h, w/2)
+		}
+	}
+}
+
 func TestTreeHasWoodAndLeaves(t *testing.T) {
 	c := canvas.New(60, 20)
 	Draw(c, testSeed, scene.State{Growth: 1})
