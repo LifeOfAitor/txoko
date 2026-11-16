@@ -1,0 +1,22 @@
+version: "2"
+
+linters:
+  default: standard # errcheck, govet, ineffassign, staticcheck, unused
+  enable:
+    - misspell
+    - revive
+    - gocritic
+    - unconvert
+    - errorlint
+  settings:
+    errcheck:
+      exclude-functions:
+        # Writing to stdout/stderr or a strings.Builder: nothing useful to do on failure.
+        - fmt.Fprint
+        - fmt.Fprintf
+        - fmt.Fprintln
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
