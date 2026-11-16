@@ -17,6 +17,11 @@ var (
 	midnight = func() time.Time { return time.Date(2026, 11, 16, 23, 30, 0, 0, time.UTC) }
 )
 
+func assertGolden(t *testing.T, name, got string) {
+	t.Helper()
+	golden.Assert(t, name, got)
+}
+
 func newTest(now func() time.Time) Model {
 	plain := PlainTheme()
 	return New(Options{Seed: 42, Growth: 0.8, Now: now, Theme: &plain})
