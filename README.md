@@ -38,7 +38,7 @@
 
 ## Roadmap
 
-- [ ] **0 · Foundations** — project layout, tests, linting, CI
+- [x] **0 · Foundations** — project layout, tests, linting, CI
 - [ ] **1 · First scene** — an animated garden in the terminal
 - [ ] **2 · Real activity** — git hooks and a local SQLite store
 - [ ] **3 · Everywhere** — compact mode, neofetch-style splash and tmux status line
