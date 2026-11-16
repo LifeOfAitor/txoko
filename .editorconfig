@@ -15,3 +15,7 @@ indent_style = tab
 [*.{yml,yaml,md,toml}]
 indent_style = space
 indent_size = 2
+
+[*.golden]
+trim_trailing_whitespace = false
+insert_final_newline = false

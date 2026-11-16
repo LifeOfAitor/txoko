@@ -11,12 +11,14 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/LifeOfAitor/txoko/internal/tui"
 	"github.com/LifeOfAitor/txoko/internal/version"
 )
 
 // Exit codes follow common Unix conventions.
 const (
 	ExitOK    = 0
+	ExitError = 1
 	ExitUsage = 2
 )
 
@@ -26,9 +28,19 @@ Usage:
   txoko [flags]
 
 Flags:
+      --growth N   starting growth of the demo garden, 0 to 1 (default 0.4)
+      --seed N     garden layout; the default is unique to this machine
   -h, --help       show this help
   -v, --version    print version information
+
+Keys:
+  +/-  grow or shrink   n  day / night / auto   r  new layout
+  space  pause          q  quit
 `
+
+// startTUI launches the interactive UI. Tests replace it so they never need
+// a real terminal.
+var startTUI = tui.Run
 
 // Run executes txoko with the given arguments (without the program name)
 // and returns the process exit code.
@@ -37,29 +49,42 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	fs.SetOutput(io.Discard) // errors and usage are printed by us, not by flag
 	fs.Usage = func() {}
 
-	var showVersion bool
-	fs.BoolVar(&showVersion, "version", false, "print version information")
-	fs.BoolVar(&showVersion, "v", false, "print version information")
+	var (
+		showVersion bool
+		opts        = tui.Options{Growth: tui.DefaultGrowth}
+	)
+	fs.BoolVar(&showVersion, "version", false, "")
+	fs.BoolVar(&showVersion, "v", false, "")
+	fs.Float64Var(&opts.Growth, "growth", tui.DefaultGrowth, "")
+	fs.Uint64Var(&opts.Seed, "seed", 0, "")
 
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			fmt.Fprint(stdout, usage)
 			return ExitOK
 		}
-		fmt.Fprintf(stderr, "txoko: %v\n\n%s", err, usage)
-		return ExitUsage
+		return usageError(stderr, err.Error())
 	}
 
 	if fs.NArg() > 0 {
-		fmt.Fprintf(stderr, "txoko: unknown command %q\n\n%s", fs.Arg(0), usage)
-		return ExitUsage
+		return usageError(stderr, fmt.Sprintf("unknown command %q", fs.Arg(0)))
 	}
-
 	if showVersion {
 		fmt.Fprint(stdout, version.Get())
 		return ExitOK
 	}
+	if opts.Growth < 0 || opts.Growth > 1 {
+		return usageError(stderr, fmt.Sprintf("--growth must be between 0 and 1, got %v", opts.Growth))
+	}
 
-	fmt.Fprintln(stdout, "🌱 txoko is still sprouting — nothing to show yet. Try `txoko --version`.")
+	if err := startTUI(opts); err != nil {
+		fmt.Fprintf(stderr, "txoko: %v\n", err)
+		return ExitError
+	}
 	return ExitOK
+}
+
+func usageError(stderr io.Writer, msg string) int {
+	fmt.Fprintf(stderr, "txoko: %s\n\n%s", msg, usage)
+	return ExitUsage
 }
