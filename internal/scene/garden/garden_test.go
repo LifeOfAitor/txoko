@@ -186,3 +186,15 @@ func TestPlantStartsLate(t *testing.T) {
 		t.Error("plant should be fully grown at growth 1")
 	}
 }
+
+func TestSceneInterface(t *testing.T) {
+	s := Scene{}
+	if s.Name() != "garden" {
+		t.Errorf("Name() = %q", s.Name())
+	}
+	c := canvas.New(40, 10)
+	s.Draw(c, testSeed, State{Growth: 1})
+	if c.String() != render(40, 10, testSeed, State{Growth: 1}) {
+		t.Error("Scene.Draw should match Draw")
+	}
+}

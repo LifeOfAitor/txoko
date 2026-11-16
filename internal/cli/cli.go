@@ -10,6 +10,8 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"slices"
+	"strings"
 
 	"github.com/LifeOfAitor/txoko/internal/tui"
 	"github.com/LifeOfAitor/txoko/internal/version"
@@ -22,21 +24,25 @@ const (
 	ExitUsage = 2
 )
 
-const usage = `txoko — a cozy corner for your terminal that grows as you work.
+const usageTemplate = `txoko — a cozy corner for your terminal that grows as you work.
 
 Usage:
   txoko [flags]
 
 Flags:
-      --growth N   starting growth of the demo garden, 0 to 1 (default 0.4)
-      --seed N     garden layout; the default is unique to this machine
+      --scene S    scene to show: %s (default %s)
+      --growth N   starting growth of the demo, 0 to 1 (default 0.4)
+      --seed N     scene layout; the default is unique to this machine
   -h, --help       show this help
   -v, --version    print version information
 
 Keys:
-  +/-  grow or shrink   n  day / night / auto   r  new layout
-  space  pause          q  quit
+  +/-  grow or shrink   s  next scene   n  day / night / auto
+  r  new layout         space  pause    q  quit
 `
+
+// usage is the help text with the scene names filled in.
+var usage = fmt.Sprintf(usageTemplate, strings.Join(tui.SceneNames(), ", "), tui.SceneNames()[0])
 
 // startTUI launches the interactive UI. Tests replace it so they never need
 // a real terminal.
@@ -57,6 +63,7 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	fs.BoolVar(&showVersion, "v", false, "")
 	fs.Float64Var(&opts.Growth, "growth", tui.DefaultGrowth, "")
 	fs.Uint64Var(&opts.Seed, "seed", 0, "")
+	fs.StringVar(&opts.Scene, "scene", "", "")
 
 	if err := fs.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -75,6 +82,11 @@ func Run(args []string, stdout, stderr io.Writer) int {
 	}
 	if opts.Growth < 0 || opts.Growth > 1 {
 		return usageError(stderr, fmt.Sprintf("--growth must be between 0 and 1, got %v", opts.Growth))
+	}
+
+	if opts.Scene != "" && !slices.Contains(tui.SceneNames(), opts.Scene) {
+		return usageError(stderr, fmt.Sprintf("unknown scene %q (available: %s)",
+			opts.Scene, strings.Join(tui.SceneNames(), ", ")))
 	}
 
 	if err := startTUI(opts); err != nil {

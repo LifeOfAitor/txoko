@@ -62,6 +62,7 @@ func TestViewGolden(t *testing.T) {
 		{"view_paused", noon, []tea.Msg{size(60, 18), key("space")}},
 		{"view_narrow", noon, []tea.Msg{size(30, 12)}},
 		{"view_too_small", noon, []tea.Msg{size(20, 6)}},
+		{"view_garden", noon, []tea.Msg{size(60, 18), key("s")}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -148,6 +149,32 @@ func TestReseedChangesGarden(t *testing.T) {
 	}
 	if a, b := nextSeed(1), nextSeed(1); a != b {
 		t.Error("nextSeed must be deterministic")
+	}
+}
+
+func TestSceneKeyCycles(t *testing.T) {
+	m, _ := send(newTest(noon), size(60, 18))
+	names := SceneNames()
+	for i := range len(names) + 1 {
+		want := names[i%len(names)]
+		if !strings.Contains(m.View().Content, "· "+want+" ·") {
+			t.Errorf("step %d: title should show %q", i, want)
+		}
+		m, _ = send(m, key("s"))
+	}
+}
+
+func TestSceneOption(t *testing.T) {
+	plain := PlainTheme()
+	m := New(Options{Scene: "garden", Theme: &plain})
+	if scenes[m.scene].Name() != "garden" {
+		t.Errorf("scene = %q, want garden", scenes[m.scene].Name())
+	}
+	if m := New(Options{Scene: "nope"}); m.scene != 0 {
+		t.Error("unknown scene should fall back to the default")
+	}
+	if SceneNames()[0] != "bonsai" {
+		t.Error("bonsai should be the default scene")
 	}
 }
 

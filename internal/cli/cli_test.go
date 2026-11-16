@@ -48,6 +48,8 @@ func TestRun(t *testing.T) {
 		{"growth too high", []string{"--growth", "1.5"}, ExitUsage, "", "--growth must be between 0 and 1", false},
 		{"growth negative", []string{"--growth=-0.1"}, ExitUsage, "", "--growth must be between 0 and 1", false},
 		{"growth not a number", []string{"--growth", "lots"}, ExitUsage, "", "invalid value", false},
+		{"known scene", []string{"--scene", "garden"}, ExitOK, "", "", true},
+		{"unknown scene", []string{"--scene", "volcano"}, ExitUsage, "", `unknown scene "volcano" (available: bonsai, garden)`, false},
 	}
 
 	for _, tt := range tests {
@@ -69,13 +71,13 @@ func TestRun(t *testing.T) {
 
 func TestRunPassesOptionsToTUI(t *testing.T) {
 	calls := fakeTUI(t, nil)
-	run("--seed", "7", "--growth", "0.9")
+	run("--seed", "7", "--growth", "0.9", "--scene", "garden")
 
 	if len(*calls) != 1 {
 		t.Fatalf("TUI started %d times, want 1", len(*calls))
 	}
-	if got := (*calls)[0]; got.Seed != 7 || got.Growth != 0.9 {
-		t.Errorf("options = %+v, want seed 7 and growth 0.9", got)
+	if got := (*calls)[0]; got.Seed != 7 || got.Growth != 0.9 || got.Scene != "garden" {
+		t.Errorf("options = %+v, want seed 7, growth 0.9 and the garden", got)
 	}
 }
 
@@ -95,6 +97,13 @@ func TestRunReportsTUIErrors(t *testing.T) {
 	}
 	if !strings.Contains(stderr, "txoko: no terminal here") {
 		t.Errorf("stderr = %q", stderr)
+	}
+}
+
+func TestUsageListsScenes(t *testing.T) {
+	_, stdout, _ := run("--help")
+	if !strings.Contains(stdout, "bonsai, garden (default bonsai)") {
+		t.Errorf("help should list scenes, got:\n%s", stdout)
 	}
 }
 

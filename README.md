@@ -1,12 +1,17 @@
 <div align="center">
 
 <pre>
-     ·   ☾      ·
-        ·  ✿        ·
-   ❀   \|/   ,@,   ✿
-  \|/  -*-  (@@@) \|/
-  _|_  /|\   \|/  _|_
- ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔
+        @ ~|*
+           |  %  @*
+           \&amp;_|%%%%
+         %%\&amp;@&amp;&amp;&amp;/&amp;@
+           @\%\|&amp;&amp;&amp;@
+            &amp;@@\@@
+             ,  \&amp;
+                 ||
+                 ||
+          \_____~_:__:/
+           \_________/
 </pre>
 
 # txoko
@@ -23,13 +28,13 @@
 ---
 
 > [!NOTE]
-> txoko is in early development. There's no release yet, but you can already [run the demo garden from source](#try-it) — or star the repo to watch it grow.
+> txoko is in early development. There's no release yet, but you can already [run the demo from source](#try-it) — or star the repo to watch it grow.
 
 *Txoko* means "little corner" in Basque. It's an ambient TUI that lives in a corner of your terminal — a tmux pane, a split, or a splash screen when you open your shell — and slowly comes alive as you code: commits, focus time and everyday activity make your scene grow.
 
 ## Planned features
 
-- 🌱 **Living scenes** — a garden, a city lighting up at night, a pond, a forest… pick the one that fits your setup.
+- 🌳 **Living scenes** — a bonsai that really grows branch by branch, a garden, and soon a city lighting up at night, a pond, a forest… pick the one that fits your setup.
 - 🪴 **Your own scenes** — design custom scenes with a simple config file, the same way you'd customize neofetch's ASCII art.
 - 🖥️ **Three ways to use it** — a live animated view, a one-shot neofetch-style splash, and a single-line status for tmux or your prompt.
 - 📊 **Real activity** — git commits, active time and your GitHub contribution calendar.
@@ -39,7 +44,7 @@
 ## Roadmap
 
 - [x] **0 · Foundations** — project layout, tests, linting, CI
-- [x] **1 · First scene** — an animated garden in the terminal
+- [x] **1 · First scenes** — a growing bonsai and an animated garden
 - [ ] **2 · Real activity** — git hooks and a local SQLite store
 - [ ] **3 · Everywhere** — compact mode, neofetch-style splash and tmux status line
 - [ ] **4 · First release** — `brew install` via a Homebrew tap
@@ -51,7 +56,7 @@
 
 ## Try it
 
-The first scene is a demo garden you can grow by hand — real activity tracking comes next. You'll need [Go](https://go.dev/dl/) 1.27+.
+The demo lets you grow the scene by hand — real activity tracking comes next. You'll need [Go](https://go.dev/dl/) 1.27+.
 
 ```sh
 git clone https://github.com/LifeOfAitor/txoko.git
@@ -60,33 +65,44 @@ make run
 ```
 
 ```
-╭─ txoko · garden · night · paused ────────────────────────────╮
-│                ·                                          ☾  │
-│       ·                  · ·                                 │
-│         ✦   ✦*@*          ψ                            · ❀   │
-│  ·  ψ         |/ ·       \|/          ✿                  |/  │
-│   ·\|/ ψ   ✦  |          \|/         ·|       ✿     ❀    |   │
-│    \|/\|/    \|     ψ    \|/         \|      \|    \|   \|   │
-│    \|/\|/     |    \|/   \|/  · ✿     |       |     |    |   │
-│    \|/\|/     |/   \|/   \|/    |/    |/  •   |/    |/   |/  │
-│    \|/\|/     |    \|/   \|/    |     |       |     |    |   │
-│    \|/\|/    \| •  \|/   \|/   \|    \|      \|    \|   \|   │
-│'   .|//|.',," |,"", |'    |` '' |," ' |." .'..|.`'.,|'', |, '│
-│▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔│
-├──────────────────────────────────────────────────────────────┤
-│ growth ▰▰▰▰▰▰▰▰▰▰ 100%  demo                +/- grow  q quit │
-╰──────────────────────────────────────────────────────────────╯
+╭─ txoko · bonsai · night · paused ──────────────────────────────────────╮
+│                                                ·                    ☾  │
+│           ·       ·                                                    │
+│                        ·          ·                                    │
+│                   ·   @& #%%               ·                           │
+│                     @ ## *  %      ✦     #@  @                         │
+│                     &% @*|&#@           &@   %                         │
+│                  %   & & /         %%  *%# |&&%@ @                     │
+│               @&@&%@#@& \# @& %%&&@#&@&%&@&%@&                         │
+│              &&%&&*&&@%* |@%%@&&_/&&@/%&##&&%%&&                       │
+│           @#&@&&#&%@&&\@ \&@%__\_|&%|&%*@\%/&*%&                       │
+│         &&&&&**• @_|&@%/& _/@&&&@\~%#&|&@///=%  *%%                    │
+│          &@&\*%#@%@\  *%&%  *& *&_#|#|/~_=_#&&%                        │
+│        &@%# %\|#_|  & %%\& %  # &%&|@/  #       &                      │
+│          %@@&%_____~_\@ &\&  &@&&@ |@&*@                               │
+│           @•& %% @     ~______&~_\\/&&  @                              │
+│                               %&  ~||&                                 │
+│                                 *&#||                                  │
+│                                    ||                                  │
+│                      \_____,:_._,_,_:~..~,_,__:_/                      │
+│                       \________________________/                       │
+├────────────────────────────────────────────────────────────────────────┤
+│ growth ▰▰▰▰▰▰▰▰▰▰ 100%  demo                          +/- grow  q quit │
+╰────────────────────────────────────────────────────────────────────────╯
 ```
 
 | Key | Action |
 |---|---|
-| <kbd>+</kbd> / <kbd>-</kbd> | grow or shrink the garden |
+| <kbd>+</kbd> / <kbd>-</kbd> | grow or shrink the scene |
+| <kbd>s</kbd> | switch scene (bonsai, garden) |
 | <kbd>n</kbd> | cycle the sky: day → night → follow the clock |
 | <kbd>r</kbd> | plant a new layout |
 | <kbd>space</kbd> | pause the animation |
 | <kbd>q</kbd> | quit |
 
-Flags: `--growth 0..1` sets the starting growth, `--seed N` picks a layout (by default every machine gets its own garden).
+Flags: `--scene bonsai|garden` picks the scene, `--growth 0..1` sets the starting growth and `--seed N` picks a layout (by default every machine gets its own tree). The capture above is `--seed 3` at night.
+
+**How the bonsai grows:** the tree is simulated tip by tip from the seed — the trunk climbs with a slow S-shaped lean, limbs reach sideways, twigs fork and burst into clumps of leaves. Progress reveals that growth in order, so every bit of work adds a branch or a few leaves.
 
 ## Development
 

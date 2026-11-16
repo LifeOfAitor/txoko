@@ -16,7 +16,7 @@ import (
 	"charm.land/lipgloss/v2"
 
 	"github.com/LifeOfAitor/txoko/internal/canvas"
-	"github.com/LifeOfAitor/txoko/internal/scene/garden"
+	"github.com/LifeOfAitor/txoko/internal/scene"
 )
 
 // Defaults for Options.
@@ -34,7 +34,8 @@ const (
 
 // Options configures a new Model. Zero values pick sensible defaults.
 type Options struct {
-	Seed   uint64           // garden layout; 0 derives one from the hostname
+	Scene  string           // scene name; "" picks the default (see SceneNames)
+	Seed   uint64           // scene layout; 0 derives one from the hostname
 	Growth float64          // starting progress, 0..1
 	FPS    int              // animation frames per second
 	Now    func() time.Time // clock; injected so tests control day and night
@@ -52,6 +53,7 @@ const (
 
 // Model is the TUI state.
 type Model struct {
+	scene  int // index into scenes
 	seed   uint64
 	growth float64
 	frame  int
@@ -89,11 +91,12 @@ func New(opts Options) Model {
 	if opts.Theme != nil {
 		m.theme = *opts.Theme
 	}
+	m.scene, _ = sceneIndex(opts.Scene) // unknown names fall back to the default
 	return m
 }
 
 // DefaultSeed derives a stable seed from the machine's hostname, so your
-// garden looks the same every time you open it — it's yours.
+// scene looks the same every time you open it — it's yours.
 func DefaultSeed() uint64 {
 	host, err := os.Hostname()
 	if err != nil || host == "" {
@@ -152,6 +155,8 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.growth = clamp01(m.growth - growthStep)
 	case "n":
 		m.sky = (m.sky + 1) % 3
+	case "s":
+		m.scene = (m.scene + 1) % len(scenes)
 	case "r":
 		m.seed = nextSeed(m.seed)
 	case "space", "p":
@@ -195,7 +200,7 @@ func (m Model) render() string {
 
 	inner := m.canvas.Width()
 	night := m.night()
-	garden.Draw(m.canvas, m.seed, garden.State{Growth: m.growth, Frame: m.frame, Night: night})
+	scenes[m.scene].Draw(m.canvas, m.seed, scene.State{Growth: m.growth, Frame: m.frame, Night: night})
 
 	return frame(inner, m.title(night), renderCanvas(m.canvas, m.theme), m.footer(inner), m.theme)
 }
@@ -208,7 +213,7 @@ func (m Model) title(night bool) []span {
 	}
 	title := []span{
 		{"txoko", t.Title},
-		{" · garden · " + sky, t.Muted},
+		{" · " + scenes[m.scene].Name() + " · " + sky, t.Muted},
 	}
 	if m.paused {
 		title = append(title, span{" · paused", t.Accent})
@@ -230,6 +235,8 @@ func (m Model) footer(inner int) string {
 	hints := []span{
 		{"+/-", t.Accent},
 		{" grow  ", t.Muted},
+		{"s", t.Accent},
+		{" scene  ", t.Muted},
 		{"n", t.Accent},
 		{" sky  ", t.Muted},
 		{"r", t.Accent},

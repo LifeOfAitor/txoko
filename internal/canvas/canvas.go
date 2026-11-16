@@ -28,6 +28,11 @@ const (
 	InkCloud
 	InkFirefly
 	InkButterfly
+	InkWood
+	InkWoodDim
+	InkLeafDark
+	InkLeafDim
+	InkPot
 
 	// InkCount is the number of inks. Keep it last.
 	InkCount

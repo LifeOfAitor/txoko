@@ -12,18 +12,20 @@ import (
 	"math/rand/v2"
 
 	"github.com/LifeOfAitor/txoko/internal/canvas"
+	"github.com/LifeOfAitor/txoko/internal/scene"
 )
 
-// State is everything that changes the picture besides the seed and size.
-type State struct {
-	// Growth is overall progress from 0 (bare soil) to 1 (full bloom).
-	// Values outside that range are clamped.
-	Growth float64
-	// Frame is an ever-increasing animation counter.
-	Frame int
-	// Night switches the sky to moon, stars and fireflies.
-	Night bool
-}
+// State is the shared scene state.
+type State = scene.State
+
+// Scene exposes the garden through the scene.Scene interface.
+type Scene struct{}
+
+// Name implements scene.Scene.
+func (Scene) Name() string { return "garden" }
+
+// Draw implements scene.Scene.
+func (Scene) Draw(c *canvas.Canvas, seed uint64, s State) { Draw(c, seed, s) }
 
 // Growth thresholds, relative to each plant's own progress.
 const (
