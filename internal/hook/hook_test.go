@@ -128,7 +128,7 @@ func TestHooksAreSilent(t *testing.T) {
 	src := filepath.Join(t.TempDir(), "src")
 	clone := filepath.Join(t.TempDir(), "clone")
 	steps := [][]string{
-		{"init", "-q", src},
+		{"-c", "init.defaultBranch=main", "init", "-q", src},
 		{"-C", src, "-c", "user.email=me@example.com", "-c", "user.name=Me", "commit", "-q", "--allow-empty", "-m", "x"},
 		{"clone", "-q", src, clone},
 	}
