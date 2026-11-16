@@ -21,6 +21,11 @@ type Theme struct {
 // DefaultTheme uses only the 16 basic ANSI colors. Those are the colors your
 // terminal theme defines, so txoko automatically matches Catppuccin, Gruvbox,
 // Rosé Pine or whatever palette you run.
+//
+// Many pastel palettes (Catppuccin among them) make "bright" colors identical
+// to normal ones, so tones never rely on bright alone: the lightest tone is
+// also bold and the darkest is faint, which keeps three distinct shades.
+// Faint is used sparingly because some terminals dim it heavily.
 func DefaultTheme() Theme {
 	fg := func(c color.Color) lipgloss.Style { return lipgloss.NewStyle().Foreground(c) }
 
@@ -28,20 +33,20 @@ func DefaultTheme() Theme {
 	t.Ink[canvas.InkSoil] = fg(lipgloss.Yellow).Faint(true)
 	t.Ink[canvas.InkGrass] = fg(lipgloss.Green)
 	t.Ink[canvas.InkStem] = fg(lipgloss.Green)
-	t.Ink[canvas.InkLeaf] = fg(lipgloss.BrightGreen)
+	t.Ink[canvas.InkLeaf] = fg(lipgloss.BrightGreen).Bold(true)
 	t.Ink[canvas.InkBud] = fg(lipgloss.BrightGreen)
 	t.Ink[canvas.InkPetalPink] = fg(lipgloss.BrightMagenta)
 	t.Ink[canvas.InkPetalRed] = fg(lipgloss.BrightRed)
 	t.Ink[canvas.InkPetalYellow] = fg(lipgloss.Yellow)
-	t.Ink[canvas.InkCenter] = fg(lipgloss.BrightYellow)
+	t.Ink[canvas.InkCenter] = fg(lipgloss.BrightYellow).Bold(true)
 	t.Ink[canvas.InkStar] = fg(lipgloss.White)
-	t.Ink[canvas.InkMoon] = fg(lipgloss.BrightYellow)
+	t.Ink[canvas.InkMoon] = fg(lipgloss.BrightYellow).Bold(true)
 	t.Ink[canvas.InkSun] = fg(lipgloss.BrightYellow)
 	t.Ink[canvas.InkCloud] = fg(lipgloss.White).Faint(true)
-	t.Ink[canvas.InkFirefly] = fg(lipgloss.BrightYellow)
+	t.Ink[canvas.InkFirefly] = fg(lipgloss.BrightYellow).Bold(true)
 	t.Ink[canvas.InkButterfly] = fg(lipgloss.Magenta)
-	t.Ink[canvas.InkWood] = fg(lipgloss.Yellow)
-	t.Ink[canvas.InkWoodDim] = fg(lipgloss.Yellow).Faint(true)
+	t.Ink[canvas.InkWood] = fg(lipgloss.Yellow).Bold(true)
+	t.Ink[canvas.InkWoodDim] = fg(lipgloss.Yellow)
 	t.Ink[canvas.InkLeafDark] = fg(lipgloss.Green)
 	t.Ink[canvas.InkLeafDim] = fg(lipgloss.Green).Faint(true)
 	t.Ink[canvas.InkPot] = fg(lipgloss.White)
