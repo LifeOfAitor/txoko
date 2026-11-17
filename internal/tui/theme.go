@@ -16,6 +16,8 @@ type Theme struct {
 	Title  lipgloss.Style
 	Muted  lipgloss.Style
 	Accent lipgloss.Style
+
+	plain bool // no styling at all, not even dimmed shadows
 }
 
 // DefaultTheme uses only the 16 basic ANSI colors. Those are the colors your
@@ -68,7 +70,7 @@ func DefaultTheme() Theme {
 }
 
 // PlainTheme has no styling at all. Tests use it to compare plain text.
-func PlainTheme() Theme { return Theme{} }
+func PlainTheme() Theme { return Theme{plain: true} }
 
 // renderCanvas turns a canvas into styled lines. Consecutive cells sharing
 // an ink are styled as one run, which keeps the output small: one escape
@@ -86,7 +88,7 @@ func renderCanvas(c *canvas.Canvas, t Theme) []string {
 				run.WriteRune(row[i].Rune)
 			}
 			switch {
-			case ink == canvas.InkNone:
+			case ink == canvas.InkNone, t.plain:
 				line.WriteString(run.String())
 			case shadow:
 				// Out of the light: same color, dimmed.
