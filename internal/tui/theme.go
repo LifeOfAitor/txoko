@@ -30,7 +30,7 @@ func DefaultTheme() Theme {
 	fg := func(c color.Color) lipgloss.Style { return lipgloss.NewStyle().Foreground(c) }
 
 	var t Theme
-	t.Ink[canvas.InkSoil] = fg(lipgloss.Yellow).Faint(true)
+	t.Ink[canvas.InkSoil] = fg(lipgloss.Yellow)
 	t.Ink[canvas.InkGrass] = fg(lipgloss.Green)
 	t.Ink[canvas.InkStem] = fg(lipgloss.Green)
 	t.Ink[canvas.InkLeaf] = fg(lipgloss.BrightGreen).Bold(true)
@@ -56,8 +56,6 @@ func DefaultTheme() Theme {
 	t.Ink[canvas.InkAutumnOrange] = fg(lipgloss.BrightRed).Bold(true)
 	t.Ink[canvas.InkAutumnGold] = fg(lipgloss.Yellow).Bold(true)
 	t.Ink[canvas.InkSnow] = fg(lipgloss.BrightWhite).Bold(true)
-	t.Ink[canvas.InkLantern] = fg(lipgloss.BrightYellow).Bold(true)
-	t.Ink[canvas.InkGlow] = fg(lipgloss.Yellow)
 
 	t.Border = fg(lipgloss.BrightBlack)
 	t.Title = fg(lipgloss.Green).Bold(true)

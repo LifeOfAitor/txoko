@@ -39,8 +39,6 @@ const (
 	InkAutumnOrange
 	InkAutumnGold
 	InkSnow
-	InkLantern // warm light at night
-	InkGlow    // things lit up close by the lantern
 
 	// InkCount is the number of inks. Keep it last.
 	InkCount
@@ -50,8 +48,8 @@ const (
 type Cell struct {
 	Rune rune
 	Ink  Ink
-	// Shadow marks a cell that is out of the light, e.g. away from the
-	// lantern at night. Themes draw it dimmed.
+	// Shadow marks a cell that is out of the light, e.g. the tree at
+	// night. Themes draw it dimmed.
 	Shadow bool
 }
 
