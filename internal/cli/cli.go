@@ -72,7 +72,7 @@ Flags:
 
 Keys:
   +/-  grow or shrink (not with --work)   s  next scene   e  season
-  n  day / night / auto                   r  new layout
+  n  day or night                         r  new layout
   space  pause                            q  quit
 `
 
