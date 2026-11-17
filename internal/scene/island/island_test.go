@@ -119,6 +119,115 @@ func TestWaterfall(t *testing.T) {
 	}
 }
 
+// TestRootsHangFromTheRock: every root starts right under the rock and
+// is one connected line, never inside the rock or the waterfall.
+func TestRootsHangFromTheRock(t *testing.T) {
+	for _, size := range [][2]int{{70, 24}, {82, 57}, {40, 16}, {120, 40}} {
+		l := newLayout(testSeed, size[0], size[1])
+		roots := l.roots()
+		if len(roots) < 2 {
+			t.Fatalf("%v: only %d roots", size, len(roots))
+		}
+		for i, root := range roots {
+			for k, cell := range root {
+				if l.inRock(cell.x, cell.y) || abs(cell.x-l.fallX) < 2 {
+					t.Errorf("%v root %d: (%d,%d) is in the rock or the waterfall", size, i, cell.x, cell.y)
+				}
+				if k == 0 {
+					continue
+				}
+				if p := root[k-1]; cell.y != p.y+1 || abs(cell.x-p.x) > 1 || cell.at < p.at {
+					t.Errorf("%v root %d breaks at cell %d", size, i, k)
+				}
+			}
+		}
+	}
+}
+
+// TestRootsGoAround: a root pushed towards the rock or the waterfall
+// drops straight down instead of running into them.
+func TestRootsGoAround(t *testing.T) {
+	l := newLayout(testSeed, 70, 24)
+	under := l.cx - l.half + 1 // under the overhang, leaning in
+	nearFall := l.fallX - 2    // beside the waterfall, leaning out
+	for _, root := range [][]rootCell{
+		l.root(0, under, l.top+1, 6, 1, 0, 1),
+		l.root(0, nearFall, l.top+l.depth+2, 4, 1, 0, 1),
+	} {
+		for _, cell := range root {
+			if l.inRock(cell.x, cell.y) || abs(cell.x-l.fallX) < 2 {
+				t.Errorf("root ran into (%d,%d)", cell.x, cell.y)
+			}
+		}
+	}
+}
+
+// TestRootsSwayGently: a root may lean, but never zigzags left and right
+// on consecutive rows.
+func TestRootsSwayGently(t *testing.T) {
+	for w := 16; w < 140; w += 7 {
+		for h := 8; h < 70; h += 5 {
+			for _, root := range newLayout(testSeed, w, h).roots() {
+				for k := 2; k < len(root); k++ {
+					a, b := root[k-1].x-root[k-2].x, root[k].x-root[k-1].x
+					if a != 0 && b == -a {
+						t.Fatalf("%dx%d: a root zigzags at (%d,%d)", w, h, root[k].x, root[k].y)
+					}
+				}
+			}
+		}
+	}
+}
+
+// TestRootsGrow: roots show up and lengthen with growth.
+func TestRootsGrow(t *testing.T) {
+	roots := func(g float64) int {
+		n := 0
+		c := static(70, 24, scene.State{Growth: g})
+		l := newLayout(testSeed, 70, 24)
+		for y := l.top + 1; y < c.Height(); y++ {
+			for _, cell := range c.Row(y) {
+				if cell.Ink == canvas.InkWoodDim {
+					n++
+				}
+			}
+		}
+		return n
+	}
+	if a, b, c := roots(0), roots(0.5), roots(1); a != 0 || b == 0 || c <= b {
+		t.Errorf("roots should grow: %d, %d, %d cells", a, b, c)
+	}
+}
+
+// TestWaterfallEndsInMidAir: in a tall pane the waterfall breaks into
+// spray instead of running down to the bottom.
+func TestWaterfallEndsInMidAir(t *testing.T) {
+	c := render(82, 57, scene.State{Growth: 1})
+	lowest := 0
+	for y := range c.Height() {
+		for _, cell := range c.Row(y) {
+			if cell.Ink == canvas.InkWater || cell.Ink == canvas.InkWaterDim {
+				lowest = y
+			}
+		}
+	}
+	if lowest > c.Height()-5 {
+		t.Errorf("water reaches row %d of %d", lowest, c.Height())
+	}
+}
+
+// TestTreeFitsTheIsland: in a tall pane the tree stays in proportion with
+// the island rather than filling the whole sky.
+func TestTreeFitsTheIsland(t *testing.T) {
+	l := newLayout(testSeed, 82, 57)
+	if height := l.tree.BaseY - l.tree.Top; height > 2*l.half {
+		t.Errorf("tree %d rows tall on an island %d wide", height, 2*l.half)
+	}
+	if l.tree.Top < 3 {
+		t.Errorf("the tree reaches row %d, leaving no sky", l.tree.Top)
+	}
+}
+
 func TestDayAndNightSky(t *testing.T) {
 	day := inks(render(70, 24, scene.State{Growth: 1}))
 	night := inks(render(70, 24, scene.State{Growth: 1, Night: true, MoonPhase: 0.5}))
