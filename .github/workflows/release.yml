@@ -1,0 +1,30 @@
+name: Release
+
+# Pushing a version tag (git tag v0.1.0 && git push origin v0.1.0) builds
+# the binaries, publishes the GitHub release and updates the Homebrew tap.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # create the release and upload its files
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the changelog needs the full history
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # A token that can push to LifeOfAitor/homebrew-tap.
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}

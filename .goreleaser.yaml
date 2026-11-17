@@ -1,0 +1,103 @@
+# GoReleaser builds, packages and publishes a txoko release when a version
+# tag (v0.1.0, v0.2.0…) is pushed. Try it locally without publishing:
+#
+#   goreleaser release --snapshot --clean
+#
+# Docs: https://goreleaser.com
+version: 2
+
+project_name: txoko
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - id: txoko
+    main: ./cmd/txoko
+    binary: txoko
+    env:
+      - CGO_ENABLED=0 # pure Go (SQLite included), so it cross-compiles anywhere
+    goos: [darwin, linux]
+    goarch: [amd64, arm64]
+    flags: [-trimpath]
+    ldflags:
+      - -s -w
+      - -X github.com/LifeOfAitor/txoko/internal/version.Version={{ .Tag }}
+      - -X github.com/LifeOfAitor/txoko/internal/version.Commit={{ .ShortCommit }}
+      - -X github.com/LifeOfAitor/txoko/internal/version.Date={{ .Date }}
+    mod_timestamp: "{{ .CommitTimestamp }}" # reproducible builds
+
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  use: github
+  sort: asc
+  groups:
+    - title: "🌱 Features"
+      regexp: '^.*?feat(\(.+\))??!?:.+$'
+      order: 0
+    - title: "🐛 Fixes"
+      regexp: '^.*?fix(\(.+\))??!?:.+$'
+      order: 1
+    - title: "📝 Documentation"
+      regexp: '^.*?docs(\(.+\))??!?:.+$'
+      order: 2
+    - title: "🔧 Other changes"
+      order: 999
+  filters:
+    exclude:
+      - "^test"
+      - "^style"
+      - "^chore"
+      - "Merge pull request"
+
+release:
+  name_template: "txoko {{ .Tag }}"
+  footer: |
+    ## Install
+
+    ```sh
+    brew install LifeOfAitor/tap/txoko
+    ```
+
+    Or download an archive below, or `go install github.com/LifeOfAitor/txoko/cmd/txoko@{{ .Tag }}`.
+
+homebrew_casks:
+  - name: txoko
+    binaries: [txoko]
+    homepage: https://github.com/LifeOfAitor/txoko
+    description: A cozy corner for your terminal that grows as you work
+    license: MIT
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    commit_msg_template: "txoko {{ .Tag }}"
+    repository:
+      owner: LifeOfAitor
+      name: homebrew-tap
+      # The default GitHub Actions token can only write to this repository,
+      # so publishing to the tap needs its own token (see the release workflow).
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    # txoko isn't signed by Apple (that needs a paid developer account), so
+    # macOS would quarantine the download and refuse to run it. As the
+    # GoReleaser docs suggest for unsigned tools, clear that flag on install.
+    hooks:
+      post:
+        install_steps: |
+          on_macos do
+            run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/txoko"]
+          end
+    caveats: |
+      Start with `txoko`. To let your commits grow the tree:
+        txoko hook install
+        txoko --work
