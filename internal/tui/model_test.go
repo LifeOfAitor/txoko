@@ -437,3 +437,15 @@ func TestCheatSheetIsAlwaysComplete(t *testing.T) {
 		}
 	}
 }
+
+func TestSkyOption(t *testing.T) {
+	plain := PlainTheme()
+	day := New(Options{Sky: "day", Now: midnight, Theme: &plain})
+	night := New(Options{Sky: "night", Now: noon, Theme: &plain})
+	if day.night() || !night.night() {
+		t.Error("--sky should override the clock")
+	}
+	if m, _ := send(night, key("n")); m.night() {
+		t.Error("n should still flip a pinned sky")
+	}
+}
