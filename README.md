@@ -46,7 +46,7 @@
 - [x] **0 · Foundations** — project layout, tests, linting, CI
 - [x] **1 · First scenes** — a growing bonsai and an animated garden
 - [x] **2 · Real activity** — git hooks and a local SQLite store
-- [ ] **3 · Everywhere** — compact mode, neofetch-style splash and tmux status line
+- [x] **3 · Everywhere** — compact mode, neofetch-style splash, tmux status line and a settings file
 - [ ] **4 · First release** — `brew install` via a Homebrew tap
 - [ ] **5 · More scenes** — city, pond and forest, plus custom scenes from config
 - [ ] **6 · Your year** — a landscape built from your GitHub contribution calendar
@@ -117,12 +117,80 @@ The footer counts down (all keys are always listed, wrapping onto extra lines in
 | <kbd>+</kbd> / <kbd>-</kbd> | grow or shrink the scene (not with `--work`) |
 | <kbd>s</kbd> | switch scene (bonsai, garden) |
 | <kbd>e</kbd> | cycle the season: spring → summer → autumn → winter → today's |
+| <kbd>?</kbd> | show or hide the keys (in `--mini`) |
 | <kbd>n</kbd> | switch between day and night (until you press it, the sky follows the clock) |
 | <kbd>r</kbd> | plant a new layout |
 | <kbd>space</kbd> | pause the animation |
 | <kbd>q</kbd> | quit |
 
 Flags: `--scene bonsai|garden` picks the scene, `--seed N` picks a layout (by default every machine gets its own tree), `--growth 0..1` sets the starting growth and `--work` grows it from your activity instead. The capture above is `--seed 3` at night.
+
+### Everywhere: your shell, a tmux corner, your status bar
+
+**A greeting when you open a terminal** (neofetch-style), in `~/.zshrc`:
+
+```sh
+txoko --once --work
+```
+
+```
+                                     txoko · bonsai · autumn · day
+                  #\&                ─────────────────────────────
+            *\@*  | /                growth ▰▰▰▰▰▰▰▰▱▱ 77%
+              _\  &\                 today  22 commits · 1 min focus
+               #& |#&                streak 2 days
+               *&#/%%@               moon   🌓 first quarter
+               %,|& #&               date   Tue 17 Nov
+                 ||
+          \,,~_::,,_,./
+           \_________/
+```
+
+`--size 40x16` changes its size. Without `--work` it shows a fully grown tree.
+
+**A little corner in tmux** — no frame, one status line, <kbd>?</kbd> shows the keys:
+
+```sh
+tmux split-window -h -l 32 'txoko --mini --work'
+```
+
+**Your status bar or prompt**, refreshed every few seconds:
+
+```sh
+# ~/.tmux.conf
+set -g status-interval 10
+set -g status-right '#(txoko status) '
+```
+
+`txoko status` prints `🍂 77% · 2d`. Shape it with `--format` and the placeholders `{icon}` `{growth}` `{bar}` `{today}` `{focus}` `{streak}` `{season}` `{moon}`, for example `txoko status --format '{moon} {bar} {today}c'` → `🌓 ▰▰▰▰▱ 22c`.
+
+### Settings
+
+Save your favorite flags in `~/.config/txoko/config.toml` (or `$XDG_CONFIG_HOME/txoko/`). Flags always win over the file.
+
+```sh
+txoko config init    # writes the file with every setting explained
+txoko config         # shows where it is and checks it
+```
+
+```toml
+scene = "bonsai"
+season = ""        # empty follows the calendar
+work = true        # grow from your activity by default (--work=false to override)
+mini = false
+
+[once]
+size = "34x14"
+work = true
+
+[pomodoro]
+break = 5          # rest after every --pomodoro session
+
+[status]
+format = "{icon} {growth}% · {streak}d"
+```
+
+A typo such as `sene = "bonsai"` is reported instead of silently ignored.
 
 ### Seasons
 
@@ -171,6 +239,10 @@ Colors come from your terminal's own palette, so every season matches your theme
 | `txoko` | open your scene and grow it by hand |
 | `txoko --work` | open your scene, grown by your real activity |
 | `txoko --season winter` | start in a season instead of today's |
+| `txoko --once [--work]` | print the scene once with an info panel (for `.zshrc`) |
+| `txoko --mini` | compact mode for a small tmux corner |
+| `txoko status [--format F]` | one line for tmux or your prompt |
+| `txoko config [init]` | show or create the settings file |
 | `txoko --pomodoro M [--break M]` | focus session: a new tree blooms as the minutes pass |
 | `txoko hook install` | record every commit through a global git hook |
 | `txoko hook uninstall` | remove the hook (your history is kept) |
