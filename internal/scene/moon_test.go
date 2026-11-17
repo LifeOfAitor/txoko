@@ -38,3 +38,26 @@ func TestMoonPhaseRange(t *testing.T) {
 		}
 	}
 }
+
+func TestMoonPhaseName(t *testing.T) {
+	for _, tt := range []struct {
+		phase       float64
+		name, emoji string
+	}{
+		{0, "new moon", "🌑"},
+		{0.97, "new moon", "🌑"},
+		{0.12, "waxing crescent", "🌒"},
+		{0.25, "first quarter", "🌓"},
+		{0.38, "waxing gibbous", "🌔"},
+		{0.5, "full moon", "🌕"},
+		{0.62, "waning gibbous", "🌖"},
+		{0.75, "last quarter", "🌗"},
+		{0.87, "waning crescent", "🌘"},
+		{-0.01, "new moon", "🌑"},
+	} {
+		name, emoji := MoonPhaseName(tt.phase)
+		if name != tt.name || emoji != tt.emoji {
+			t.Errorf("MoonPhaseName(%v) = %s %s, want %s %s", tt.phase, name, emoji, tt.name, tt.emoji)
+		}
+	}
+}

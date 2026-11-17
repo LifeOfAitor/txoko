@@ -46,6 +46,7 @@ Commands (for --work):
   hook status              show whether the hook is installed
   import [dir...]          import your recent commits from repositories
   stats                    print your activity summary
+  status [--format F]      one line for tmux or your prompt, e.g. "🌳 72%% · 5d"
   log commit               record HEAD (used by the git hook)
 
 Flags:
@@ -91,6 +92,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 			return runImport(rest, stdout, stderr)
 		case "stats":
 			return runStats(rest, stdout, stderr)
+		case "status":
+			return runStatus(rest, stdout, stderr)
 		case "help":
 			fmt.Fprint(stdout, usage)
 			return ExitOK

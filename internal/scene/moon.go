@@ -19,3 +19,23 @@ func MoonPhaseOf(t time.Time) float64 {
 	cycles := float64(t.Sub(knownNewMoon)) / float64(synodicMonth)
 	return cycles - math.Floor(cycles)
 }
+
+// moonPhases names the eight traditional phases, with their emoji.
+var moonPhases = []struct{ name, emoji string }{
+	{"new moon", "🌑"},
+	{"waxing crescent", "🌒"},
+	{"first quarter", "🌓"},
+	{"waxing gibbous", "🌔"},
+	{"full moon", "🌕"},
+	{"waning gibbous", "🌖"},
+	{"last quarter", "🌗"},
+	{"waning crescent", "🌘"},
+}
+
+// MoonPhaseName returns the traditional name and emoji of a phase from
+// MoonPhaseOf, e.g. "first quarter" and "🌓". Each name covers an eighth of
+// the cycle, centered on its exact moment.
+func MoonPhaseName(phase float64) (name, emoji string) {
+	i := int(math.Floor(phase*8+0.5)) & 7 // wraps 8 back to 0
+	return moonPhases[i].name, moonPhases[i].emoji
+}
