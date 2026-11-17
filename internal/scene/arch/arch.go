@@ -54,12 +54,12 @@ func newLayout(seed uint64, w, h int) layout {
 		l.tree = nature.Grow(seed, w, h)
 		return l
 	}
-	l.aw = min(max(w/8, 3), 10)
+	l.aw = min(max(w*3/20, 3), 12)
 	l.rv = max(2, int(math.Round(float64(l.aw)*0.55)))
 	// The opening is shaped like a real doorway, about twice as tall as it
 	// is wide (cells are twice as tall as wide), never a slit: in a tall
 	// pane the wall stays low and leaves the rest to the sky.
-	open := min(max(int(math.Round(float64(h)*0.55)), l.rv+3), 2*l.aw, h-3)
+	open := min(max(int(math.Round(float64(h)*0.66)), l.rv+3), 2*l.aw, h-3)
 	l.archTop = l.meadow - open + 1
 	l.ys = l.archTop + l.rv
 	l.top = l.crumble(max(0, l.archTop-2))
@@ -180,7 +180,7 @@ func Draw(c *canvas.Canvas, seed uint64, s scene.State) {
 		nature.DrawFireflies(c, l.meadow, leaves, g, s.Frame, s.Season)
 	} else {
 		if !l.plain {
-			nature.DrawClouds(c, seed, l, []int{1, l.top[l.w/4] / 2, l.archTop + 2}, s.Frame)
+			nature.DrawClouds(c, seed, []int{1, l.top[l.w/4] / 2, l.archTop + 2}, s.Frame)
 		}
 		if g >= butterfliesAt && (s.Season == scene.Summer || s.Season == scene.Spring) {
 			drawButterflies(c, l, s.Frame)
@@ -223,7 +223,8 @@ func drawStatic(c *canvas.Canvas, seed uint64, s scene.State) (l layout, leaves 
 }
 
 // drawWall lays the stones in courses two rows tall with staggered
-// joints, outlines the arch and, in winter, puts snow on top:
+// joints, outlines the wall and its arch and, in winter, puts snow on top.
+// The wall is a solid silhouette: nothing in the sky shows through it.
 //
 //	|       |    ____    |
 //	|_______|___/    \___|
@@ -242,16 +243,24 @@ func drawWall(c *canvas.Canvas, l layout, season scene.Season) {
 			case season == scene.Winter && y == l.top[x] && !l.hasIvy(x, y):
 				c.Set(x, y, []rune{'_', '.', '_'}[x%3], canvas.InkSnow)
 			default:
-				if r := stone(x, l.meadow-y); r != ' ' || y == l.top[x] {
-					if r == ' ' {
-						r = '_' // the top of the wall always shows
-					}
-					c.Set(x, y, r, canvas.InkRockDim)
+				r := stone(x, l.meadow-y)
+				switch {
+				case y == l.top[x]:
+					r = '_' // the top of the wall always shows
+				case l.edge(x-1, y) || l.edge(x+1, y):
+					r = '|' // and so do its sides
 				}
+				// Blank stone is still stone: a space in the stone's ink
+				// keeps the wall solid, so snow, leaves and stars stay off.
+				c.Set(x, y, r, canvas.InkRockDim)
 			}
 		}
 	}
 }
+
+// edge reports whether (x, y) is open air beside the wall: neither stone
+// nor the arch's opening.
+func (l layout) edge(x, y int) bool { return !l.wall(x, y) && !l.open(x, y) }
 
 // stone is the brick pattern at column x, rel rows above the wall's foot:
 // the bottom row of each course is mortar, joints are staggered.

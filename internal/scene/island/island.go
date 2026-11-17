@@ -361,7 +361,7 @@ func drawWaterfall(c *canvas.Canvas, l layout, g float64, s scene.State) {
 // island.
 func drawClouds(c *canvas.Canvas, l layout, seed uint64, frame int) {
 	if !l.tiny {
-		nature.DrawClouds(c, seed, nil, []int{1, l.top / 3, l.h - 2}, frame)
+		nature.DrawClouds(c, seed, []int{1, l.top / 3, l.h - 2}, frame)
 	}
 }
 

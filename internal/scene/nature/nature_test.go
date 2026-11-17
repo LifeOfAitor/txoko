@@ -1,6 +1,7 @@
 package nature
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/LifeOfAitor/txoko/internal/canvas"
@@ -111,11 +112,10 @@ func TestBoxContains(t *testing.T) {
 type flat struct {
 	floor         int
 	cx, top, maxR int
-	solidFromX    int // columns from here on are solid, like a wall
 }
 
-func (f flat) UnderCanopy(x, y, margin int) bool {
-	return y >= f.floor-margin || f.solidFromX > 0 && x >= f.solidFromX
+func (f flat) UnderCanopy(_, y, margin int) bool {
+	return y >= f.floor-margin
 }
 func (f flat) Floor() int { return f.floor }
 
@@ -151,30 +151,24 @@ func TestMoonFramer(t *testing.T) {
 	}
 }
 
-// TestCloudsPassBehind: clouds never cover the canopy; without one they
-// drift across the whole sky.
+// TestCloudsPassBehind: clouds drift across their rows, behind whatever
+// is already drawn.
 func TestCloudsPassBehind(t *testing.T) {
-	sky := flat{floor: 18, solidFromX: 30}
-	covered := func(t Canopy, f int) (n int) {
+	seen := 0
+	for f := 0; f < 600; f += 37 {
 		c := canvas.New(60, 20)
-		DrawClouds(c, 1, t, []int{1, 5, 19}, f)
-		for y := range c.Height() {
-			for x, cell := range c.Row(y) {
-				if cell.Ink == canvas.InkCloud && sky.UnderCanopy(x, y, 0) {
-					n++
-				}
+		for x := 30; x < 60; x++ {
+			c.Set(x, 5, '#', canvas.InkRock) // something in the way
+		}
+		DrawClouds(c, 1, []int{1, 5, 19}, f)
+		for x := 30; x < 60; x++ {
+			if c.At(x, 5).Rune != '#' {
+				t.Fatalf("frame %d: a cloud covered (%d,5)", f, x)
 			}
 		}
-		return n
+		seen += strings.Count(c.String(), "~")
 	}
-	free := 0
-	for f := 0; f < 600; f += 37 {
-		if n := covered(sky, f); n != 0 {
-			t.Fatalf("frame %d: %d cloud cells on the canopy", f, n)
-		}
-		free += covered(nil, f)
-	}
-	if free == 0 {
-		t.Error("with no canopy, clouds should drift everywhere")
+	if seen == 0 {
+		t.Error("clouds should drift by")
 	}
 }

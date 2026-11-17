@@ -311,3 +311,59 @@ func TestDoorwayShape(t *testing.T) {
 		}
 	}
 }
+
+// TestWallIsSolid: the wall is a solid silhouette. Nothing that moves,
+// falling snow and leaves, fireflies or stars, ever shows on it, at any
+// size or seed.
+func TestWallIsSolid(t *testing.T) {
+	for seed := uint64(1); seed < 12; seed++ {
+		for _, size := range [][2]int{{80, 55}, {80, 21}, {70, 22}, {40, 14}} {
+			for _, season := range scene.Seasons {
+				for f := 0; f < 400; f += 41 {
+					s := scene.State{Growth: 1, Night: true, Frame: f, Season: season, MoonPhase: .5}
+					c := canvas.New(size[0], size[1])
+					Draw(c, seed, s)
+					still := canvas.New(size[0], size[1])
+					drawStatic(still, seed, s)
+					l := newLayout(seed, size[0], size[1])
+					for y := range c.Height() {
+						for x, cell := range c.Row(y) {
+							if !l.wall(x, y) {
+								continue
+							}
+							if want := still.At(x, y); cell.Rune != want.Rune || cell.Ink != want.Ink {
+								t.Fatalf("seed %d %v %s frame %d: %q landed on the wall at (%d,%d)", seed, size, season, f, cell.Rune, x, y)
+							}
+							if c.IsEmpty(x, y) {
+								t.Fatalf("seed %d %v: the wall has a hole at (%d,%d)", seed, size, x, y)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+// TestWallOutline: the wall's top and sides are always drawn, so you can
+// tell the ruin from the sky behind it.
+func TestWallOutline(t *testing.T) {
+	for _, size := range [][2]int{{80, 55}, {70, 22}, {40, 14}, {200, 60}} {
+		c := render(size[0], size[1], scene.State{})
+		l := newLayout(testSeed, size[0], size[1])
+		for y := range c.Height() {
+			for x := range c.Width() {
+				if !l.wall(x, y) || l.ring(x, y) {
+					continue
+				}
+				r := c.At(x, y).Rune
+				switch {
+				case y == l.top[x] && r != '_':
+					t.Errorf("%v: the top of the wall at (%d,%d) is %q", size, x, y, r)
+				case y != l.top[x] && (l.edge(x-1, y) || l.edge(x+1, y)) && r != '|':
+					t.Errorf("%v: the side of the wall at (%d,%d) is %q", size, x, y, r)
+				}
+			}
+		}
+	}
+}

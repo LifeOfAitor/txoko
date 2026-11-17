@@ -222,9 +222,9 @@ func drawShootingStar(c *canvas.Canvas, seed uint64, t Canopy, frame int) {
 }
 
 // DrawClouds lets a cloud drift slowly across each of the given rows by
-// day, each at its own pace. They pass behind whatever the scene has drawn
-// and, if t isn't nil, behind its whole canopy, gaps and all.
-func DrawClouds(c *canvas.Canvas, seed uint64, t Canopy, rows []int, frame int) {
+// day, each at its own pace. They only fill empty cells, so they pass
+// behind whatever the scene has drawn.
+func DrawClouds(c *canvas.Canvas, seed uint64, rows []int, frame int) {
 	shapes := []string{".-~~-.", ".-~~~-.", ".-~-."}
 	w := c.Width()
 	for i, row := range rows {
@@ -236,9 +236,7 @@ func DrawClouds(c *canvas.Canvas, seed uint64, t Canopy, rows []int, frame int) 
 		span := w + len(shape)
 		x := w - (frame/speed+int(Noise(i, int(seed%997), 7)*float64(span)))%span
 		for dx, r := range shape {
-			if t == nil || !t.UnderCanopy(x+dx, row, 0) {
-				c.SetIfEmpty(x+dx, row, r, canvas.InkCloud)
-			}
+			c.SetIfEmpty(x+dx, row, r, canvas.InkCloud)
 		}
 	}
 }
