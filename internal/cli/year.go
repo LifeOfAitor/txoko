@@ -4,9 +4,13 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"time"
 
+	"github.com/charmbracelet/x/term"
+
 	"github.com/LifeOfAitor/txoko/internal/contrib"
+	"github.com/LifeOfAitor/txoko/internal/tui"
 )
 
 // Where txoko reads contributions from. Tests point them at a fake GitHub.
@@ -22,11 +26,22 @@ func runYear(args []string, stdout, stderr io.Writer) int {
 	user := fs.String("user", "", "GitHub user to show (default: you)")
 	local := fs.Bool("local", false, "use txoko's own record instead of GitHub")
 	refresh := fs.Bool("refresh", false, "ask GitHub again even if it was asked recently")
+	sky := fs.String("sky", "", "day or night")
+	size := sceneSize{w: tui.YearWidth, h: tui.YearHeight}
+	fs.Var(&size, "size", "landscape size, e.g. 100x14")
 	if code, done := parse(fs, args, stdout, stderr); done {
 		return code
 	}
 	if fs.NArg() > 0 {
-		return usageError(stderr, "usage: txoko year [--user LOGIN] [--local] [--refresh]")
+		return usageError(stderr, "usage: txoko year [--user LOGIN] [--local] [--refresh] [--sky S] [--size WxH]")
+	}
+	if *sky != "" && *sky != "day" && *sky != "night" {
+		return usageError(stderr, fmt.Sprintf("--sky must be day or night, not %q", *sky))
+	}
+	if !flagSet(fs, "size") {
+		if width, ok := terminalWidth(stdout); ok {
+			size.w = width
+		}
 	}
 	if *local && (*user != "" || *refresh) {
 		return usageError(stderr, "--local reads txoko's own record: it can't take --user or --refresh")
@@ -70,33 +85,25 @@ func runYear(args []string, stdout, stderr io.Writer) int {
 			return ExitError
 		}
 		if warning != nil {
-			fmt.Fprintf(stderr, "txoko: couldn't update from GitHub (%v); showing what it said %s\n", warning, ago(t.Sub(cal.Fetched)))
+			fmt.Fprintf(stderr, "txoko: couldn't update from GitHub (%v); showing what it said %s\n", warning, tui.Ago(t.Sub(cal.Fetched)))
 		}
 	}
-	printYear(stdout, cal, t)
+	err = tui.Year(stdout, tui.YearOptions{
+		Calendar: cal, Width: size.w, Height: size.h, Sky: *sky,
+		Color: colorOutput(stdout), Now: now,
+	})
+	if err != nil {
+		return fail(stderr, err)
+	}
 	return ExitOK
 }
 
-// printYear prints the summary of a calendar.
-func printYear(w io.Writer, cal contrib.Calendar, t time.Time) {
-	fmt.Fprintf(w, "txoko · your year · %s\n", cal.Source)
-	fmt.Fprintf(w, "  total    %s in the last year\n", plural(cal.Total(), "contribution"))
-	if best, ok := cal.BestWeek(); ok {
-		fmt.Fprintf(w, "  best     %d in the week of %s\n", best.Count, best.Start.Format("2 Jan"))
+// terminalWidth is the width of the terminal w writes to, if it is one.
+var terminalWidth = func(w io.Writer) (int, bool) {
+	f, ok := w.(*os.File)
+	if !ok || !term.IsTerminal(f.Fd()) {
+		return 0, false
 	}
-	fmt.Fprintf(w, "  streak   %s at most in a row\n", plural(cal.LongestStreak(), "day"))
-	fmt.Fprintf(w, "  updated  %s\n", ago(t.Sub(cal.Fetched)))
-}
-
-// ago says how long ago something happened, roughly.
-func ago(d time.Duration) string {
-	switch {
-	case d < time.Minute:
-		return "just now"
-	case d < time.Hour:
-		return plural(int(d/time.Minute), "minute") + " ago"
-	case d < 48*time.Hour:
-		return plural(int(d/time.Hour), "hour") + " ago"
-	}
-	return plural(int(d/(24*time.Hour)), "day") + " ago"
+	width, _, err := term.GetSize(f.Fd())
+	return width, err == nil && width > 0
 }

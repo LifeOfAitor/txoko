@@ -2,8 +2,10 @@ package cli
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -56,7 +58,7 @@ func TestYearFromGitHub(t *testing.T) {
 	if code != ExitOK || errOut != "" {
 		t.Fatalf("code %d, stderr %q", code, errOut)
 	}
-	for _, want := range []string{"@octo on GitHub", "8 contributions", "7 in the week of 1 Nov", "2 days at most", "just now"} {
+	for _, want := range []string{"@octo on GitHub", "8 contributions", "7 in the week of 1 Nov", "2 days in a row", "just now"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("output lacks %q:\n%s", want, out)
 		}
@@ -119,7 +121,7 @@ func TestYearLocal(t *testing.T) {
 	if code != ExitOK {
 		t.Fatalf("code %d", code)
 	}
-	for _, want := range []string{"txoko's own record", "3 contributions", "2 days at most"} {
+	for _, want := range []string{"txoko's own record", "3 contributions", "2 days in a row"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("output lacks %q:\n%s", want, out)
 		}
@@ -142,24 +144,52 @@ func TestYearUsage(t *testing.T) {
 	}
 }
 
-func TestAgo(t *testing.T) {
-	for d, want := range map[time.Duration]string{
-		10 * time.Second: "just now",
-		time.Minute:      "1 minute ago",
-		45 * time.Minute: "45 minutes ago",
-		3 * time.Hour:    "3 hours ago",
-		47 * time.Hour:   "47 hours ago",
-		72 * time.Hour:   "3 days ago",
-	} {
-		if got := ago(d); got != want {
-			t.Errorf("ago(%v) = %q, want %q", d, got, want)
-		}
-	}
-}
-
 func TestYearWithoutADatabase(t *testing.T) {
 	t.Setenv("TXOKO_DB", "/dev/null/txoko.db") // can't be created
 	if code, _, errOut := run("year", "--local"); code != ExitError || errOut == "" {
 		t.Errorf("code %d, stderr %q", code, errOut)
+	}
+}
+
+func TestYearSize(t *testing.T) {
+	yearTest(t)
+	fakeGitHub(t, yearJSON)
+	widest := func(out string) int {
+		n := 0
+		for _, l := range strings.Split(out, "\n") {
+			n = max(n, len([]rune(l)))
+		}
+		return n
+	}
+	_, out, _ := run("year", "--size", "60x10")
+	if lines := strings.Split(out, "\n"); widest(out) > 60 || !strings.Contains(lines[11], "your year") {
+		t.Errorf("--size 60x10:\n%s", out)
+	}
+	// In a terminal it takes the terminal's width.
+	orig := terminalWidth
+	terminalWidth = func(io.Writer) (int, bool) { return 120, true }
+	t.Cleanup(func() { terminalWidth = orig })
+	if _, out, _ := run("year"); widest(out) <= 80 || widest(out) > 120 {
+		t.Errorf("should fill a 120-column terminal, widest line is %d", widest(out))
+	}
+	if code, _, _ := run("year", "--sky", "dusk"); code != ExitUsage {
+		t.Errorf("--sky dusk: code %d", code)
+	}
+	if code, out, _ := run("year", "--sky", "night"); code != ExitOK || !strings.Contains(out, "█") {
+		t.Errorf("--sky night shows the moon: code %d", code)
+	}
+}
+
+func TestTerminalWidth(t *testing.T) {
+	f, err := os.CreateTemp(t.TempDir(), "out")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = f.Close() }()
+	if _, ok := terminalWidth(f); ok {
+		t.Error("a file is not a terminal")
+	}
+	if _, ok := terminalWidth(&strings.Builder{}); ok {
+		t.Error("a buffer is not a terminal")
 	}
 }

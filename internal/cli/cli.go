@@ -53,9 +53,10 @@ Commands:
   import [dir...]          import your recent commits from repositories
   stats                    print your activity summary
   status [--format F]      one line for tmux or your prompt, e.g. "🌳 72%% · 5d"
-  year [--user U] [--local] [--refresh]
-                           your last year of contributions on GitHub
-                           (--local: from txoko's own record instead)
+  year [--user U] [--local] [--refresh] [--sky S] [--size WxH]
+                           your last year on GitHub as a landscape, one
+                           column per week (--local: from txoko's own
+                           record instead)
   log commit               record HEAD (used by the git hook)
 
 Flags:

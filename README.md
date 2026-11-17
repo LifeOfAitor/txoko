@@ -190,7 +190,7 @@ A typo such as `sene = "bonsai"` is reported instead of silently ignored.
 | `txoko hook status` | check whether the hook is installed |
 | `txoko import [dir...]` | import your commits from the last 30 days (`--days N`) |
 | `txoko stats` | print growth, today's commits and your streak |
-| `txoko year [--user U] [--local]` | your last year of GitHub contributions: total, best week, longest streak |
+| `txoko year [--user U] [--local]` | your last year on GitHub as a landscape, one column per week, with your total, best week and longest streak |
 
 ## How it works
 
