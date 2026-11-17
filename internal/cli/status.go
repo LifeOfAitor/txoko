@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"io"
@@ -22,8 +23,12 @@ var placeholder = regexp.MustCompile(`\{([a-z]+)\}`)
 // runStatus prints a single line for a tmux status bar or a shell prompt.
 // It is meant to be called every few seconds, so it only reads.
 func runStatus(args []string, stdout, stderr io.Writer) int {
+	cfg, err := loadConfig()
+	if err != nil {
+		return fail(stderr, err)
+	}
 	fs := newFlagSet("status")
-	format := fs.String("format", DefaultStatusFormat, "")
+	format := fs.String("format", cmp.Or(cfg.Status.Format, DefaultStatusFormat), "")
 	if code, done := parse(fs, args, stdout, stderr); done {
 		return code
 	}

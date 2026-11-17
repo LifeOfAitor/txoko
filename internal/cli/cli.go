@@ -43,7 +43,9 @@ Usage:
   txoko --once [--work]    print it once, neofetch-style, and exit
   txoko <command>
 
-Commands (for --work):
+Commands:
+  config                   show where the settings file is
+  config init              create it, with every setting explained
   hook install             record every commit (sets a global git hook)
   hook uninstall           remove the hook again
   hook status              show whether the hook is installed
@@ -103,6 +105,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 			return runStats(rest, stdout, stderr)
 		case "status":
 			return runStatus(rest, stdout, stderr)
+		case "config":
+			return runConfig(rest, stdout, stderr)
 		case "help":
 			fmt.Fprint(stdout, usage)
 			return ExitOK
@@ -114,6 +118,11 @@ func Run(args []string, stdout, stderr io.Writer) int {
 
 // runScene opens the interactive scene.
 func runScene(args []string, stdout, stderr io.Writer) int {
+	cfg, err := loadConfig()
+	if err != nil {
+		return fail(stderr, err)
+	}
+	// The config file provides the defaults; flags override them.
 	fs := newFlagSet("txoko")
 	var (
 		showVersion, work bool
@@ -121,20 +130,23 @@ func runScene(args []string, stdout, stderr io.Writer) int {
 	)
 	fs.BoolVar(&showVersion, "version", false, "")
 	fs.BoolVar(&showVersion, "v", false, "")
-	fs.BoolVar(&work, "work", false, "")
+	fs.BoolVar(&work, "work", cfg.Work, "")
 	fs.Float64Var(&opts.Growth, "growth", tui.DefaultGrowth, "")
-	fs.Uint64Var(&opts.Seed, "seed", 0, "")
-	fs.StringVar(&opts.Scene, "scene", "", "")
-	fs.StringVar(&opts.Season, "season", "", "")
+	fs.Uint64Var(&opts.Seed, "seed", cfg.Seed, "")
+	fs.StringVar(&opts.Scene, "scene", cfg.Scene, "")
+	fs.StringVar(&opts.Season, "season", cfg.Season, "")
 	focus := minutes{lo: 1, hi: 240}
-	brk := minutes{lo: 0, hi: 120}
+	brk := minutes{lo: 0, hi: 120, n: cfg.Pomodoro.Break}
 	fs.Var(&focus, "pomodoro", "")
 	fs.Var(&brk, "break", "")
 	var once bool
 	size := sceneSize{w: tui.OnceWidth, h: tui.OnceHeight}
+	if cfg.Once.Size != "" {
+		_ = size.Set(cfg.Once.Size) // already validated by loadConfig
+	}
 	fs.BoolVar(&once, "once", false, "")
 	fs.Var(&size, "size", "")
-	fs.BoolVar(&opts.Mini, "mini", false, "")
+	fs.BoolVar(&opts.Mini, "mini", cfg.Mini, "")
 
 	if code, done := parse(fs, args, stdout, stderr); done {
 		return code
@@ -156,6 +168,14 @@ func runScene(args []string, stdout, stderr io.Writer) int {
 
 	if _, ok := scene.ParseSeason(opts.Season); opts.Season != "" && !ok {
 		return usageError(stderr, fmt.Sprintf("unknown season %q (use spring, summer, autumn or winter)", opts.Season))
+	}
+	// Asking for a hand-set growth or a pomodoro on the command line beats
+	// `work = true` in the config file.
+	if !flagSet(fs, "work") && (flagSet(fs, "growth") || flagSet(fs, "pomodoro")) {
+		work = false
+	}
+	if once && !flagSet(fs, "work") && !flagSet(fs, "growth") {
+		work = cfg.Once.Work
 	}
 	if work && flagSet(fs, "growth") {
 		return usageError(stderr, "--growth sets the scene by hand, so it can't be combined with --work")

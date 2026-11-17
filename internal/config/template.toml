@@ -1,0 +1,34 @@
+# txoko settings. Every one of them has a command-line flag, and flags always
+# win over what's written here. Delete a line to go back to the default.
+
+# Scene to show: "bonsai" or "garden".
+scene = "bonsai"
+
+# Pin a season: "spring", "summer", "autumn" or "winter".
+# Leave it empty to follow the calendar.
+season = ""
+
+# Layout of your tree. 0 picks one that is unique to this machine.
+seed = 0
+
+# Grow from your recorded activity (commits and focus) instead of by hand.
+# On the command line, --work=false turns it off again.
+work = false
+
+# Compact mode for a small tmux corner: no frame, one status line.
+mini = false
+
+[once]
+# Size of the `txoko --once` splash, as WIDTHxHEIGHT.
+size = "34x14"
+# Show your activity (today, streak) in the splash.
+work = false
+
+[pomodoro]
+# Minutes of rest after each `txoko --pomodoro` session; 0 for none.
+break = 0
+
+[status]
+# What `txoko status` prints. Placeholders:
+# {icon} {growth} {bar} {today} {focus} {streak} {season} {moon}
+format = "{icon} {growth}% · {streak}d"
