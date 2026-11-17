@@ -9,6 +9,7 @@ package tui
 import (
 	"fmt"
 	"hash/fnv"
+	"math/rand/v2"
 	"os"
 	"time"
 
@@ -60,6 +61,10 @@ type Options struct {
 
 	Now   func() time.Time // clock; injected so tests control day, night and timers
 	Theme *Theme           // nil uses DefaultTheme
+
+	// MoonPhase fixes the moon's phase (0 new, 0.5 full); nil picks a random
+	// one, and r rolls a new one along with a new tree.
+	MoonPhase *float64
 }
 
 // skyMode decides whether the sky shows day or night.
@@ -92,6 +97,8 @@ type Model struct {
 	summary progress.Summary
 	loaded  bool
 	loadErr error
+
+	moonPhase float64
 
 	pomo        pomodoro
 	onFocusDone func(time.Duration) error
@@ -140,6 +147,10 @@ func New(opts Options) Model {
 	m.scene, _ = sceneIndex(opts.Scene) // unknown names fall back to the default
 	if s, ok := scene.ParseSeason(opts.Season); ok {
 		m.season, m.seasonFixed = s, true
+	}
+	m.moonPhase = randomMoon()
+	if opts.MoonPhase != nil {
+		m.moonPhase = *opts.MoonPhase
 	}
 	if opts.Focus > 0 {
 		m.pomo = pomodoro{phase: phaseFocus, focus: opts.Focus, brk: opts.Break, left: opts.Focus, last: m.now()}
@@ -280,6 +291,7 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.scene = (m.scene + 1) % len(scenes)
 	case "r":
 		m.seed = nextSeed(m.seed)
+		m.moonPhase = randomMoon()
 	case "space", "p":
 		m.paused = !m.paused
 		if !m.paused {
@@ -351,13 +363,19 @@ func (m Model) render() string {
 	footer := m.footer(inner)
 	// The scene fills what the borders, the title and the footer leave.
 	m.canvas.Resize(inner, max(1, m.height-3-len(footer)))
+	night := m.drawScene()
+	return frame(inner, m.title(night, inner), renderCanvas(m.canvas, m.theme), footer, m.theme)
+}
+
+// drawScene paints the current scene onto the canvas and reports whether
+// it is night.
+func (m Model) drawScene() bool {
 	night := m.night()
 	scenes[m.scene].Draw(m.canvas, m.seed, scene.State{
 		Growth: m.growth, Frame: m.frame, Night: night, Season: m.currentSeason(),
-		MoonPhase: scene.MoonPhaseOf(m.now()),
+		MoonPhase: m.moonPhase,
 	})
-
-	return frame(inner, m.title(night, inner), renderCanvas(m.canvas, m.theme), footer, m.theme)
+	return night
 }
 
 // title builds the frame's title, dropping the least important parts until
@@ -401,8 +419,15 @@ func (m Model) hint(key, label string) []span {
 }
 
 func (m Model) footer(inner int) []string {
+	status, compact, hints := m.footerParts()
+	return footerBlock(inner, status, compact, hints)
+}
+
+// footerParts returns the footer's pieces: the status, a shorter status for
+// narrow spaces, and the key hints.
+func (m Model) footerParts() (status, compact []span, hints [][]span) {
 	if m.pomodoroOn() {
-		return m.pomodoroFooter(inner)
+		return m.pomodoroParts()
 	}
 	t := m.theme
 	filled, empty := progressBar(m.growth, 10)
@@ -411,10 +436,9 @@ func (m Model) footer(inner int) []string {
 		{empty, t.Muted},
 		{fmt.Sprintf(" %3.0f%%", m.growth*100), t.Accent},
 	}
-	status := append([]span{{"growth ", t.Muted}}, bar...)
+	status = append([]span{{"growth ", t.Muted}}, bar...)
 	status = append(status, m.status()...)
 
-	var hints [][]span
 	if !m.live() {
 		hints = append(hints, m.hint("+/-", "grow"))
 	}
@@ -426,7 +450,7 @@ func (m Model) footer(inner int) []string {
 		m.hint("space", "pause"),
 		m.hint("q", "quit"),
 	)
-	return footerBlock(inner, status, bar, hints)
+	return status, bar, hints
 }
 
 // status is the part of the footer that describes where growth comes from.
@@ -449,6 +473,10 @@ func (m Model) status() []span {
 		{fmt.Sprintf("%dd", m.summary.Streak), t.Accent},
 	}
 }
+
+// randomMoon picks a moon phase that's nice to look at: never so close to
+// new moon that it all but disappears.
+func randomMoon() float64 { return 0.15 + rand.Float64()*0.7 }
 
 // nextSeed derives a new seed deterministically (splitmix64), so reseeding
 // is reproducible in tests.

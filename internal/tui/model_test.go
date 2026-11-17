@@ -22,9 +22,12 @@ func assertGolden(t *testing.T, name, got string) {
 	golden.Assert(t, name, got)
 }
 
+// testMoon pins the moon's otherwise random phase, so goldens are stable.
+var testMoon = 0.3
+
 func newTest(now func() time.Time) Model {
 	plain := PlainTheme()
-	return New(Options{Seed: 42, Growth: 0.8, Now: now, Theme: &plain})
+	return New(Options{Seed: 42, Growth: 0.8, Now: now, Theme: &plain, MoonPhase: &testMoon})
 }
 
 // send feeds messages to the model in order and returns the final model and
@@ -146,6 +149,27 @@ func TestNightTogglesInOnePress(t *testing.T) {
 	}
 	if !newTest(midnight).night() {
 		t.Error("before any key, the sky follows the clock")
+	}
+}
+
+func TestMoonIsRandomUnlessPinned(t *testing.T) {
+	seen := map[float64]bool{}
+	for range 20 {
+		p := New(Options{}).moonPhase
+		if p < 0.15 || p > 0.85 {
+			t.Fatalf("random moon %v outside the pleasant range", p)
+		}
+		seen[p] = true
+	}
+	if len(seen) < 2 {
+		t.Error("the moon phase should be random")
+	}
+	if m := newTest(noon); m.moonPhase != testMoon {
+		t.Error("a pinned phase must be kept")
+	}
+	m, _ := send(newTest(noon), key("r"))
+	if m.moonPhase == testMoon {
+		t.Error("r should roll a new moon too")
 	}
 }
 

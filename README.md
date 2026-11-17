@@ -46,7 +46,7 @@
 - [x] **0 · Foundations** — project layout, tests, linting, CI
 - [x] **1 · First scenes** — a growing bonsai and an animated garden
 - [x] **2 · Real activity** — git hooks and a local SQLite store
-- [ ] **3 · Everywhere** — compact mode, neofetch-style splash and tmux status line
+- [x] **3 · Everywhere** — compact mode, neofetch-style splash, tmux status line and a settings file
 - [ ] **4 · First release** — `brew install` via a Homebrew tap
 - [ ] **5 · More scenes** — city, pond and forest, plus custom scenes from config
 - [ ] **6 · Your year** — a landscape built from your GitHub contribution calendar
@@ -124,6 +124,72 @@ The footer counts down (all keys are always listed, wrapping onto extra lines in
 
 Flags: `--scene bonsai|garden` picks the scene, `--seed N` picks a layout (by default every machine gets its own tree), `--growth 0..1` sets the starting growth and `--work` grows it from your activity instead. The capture above is `--seed 3` at night.
 
+### Everywhere: your shell, a tmux corner, your status bar
+
+**A greeting when you open a terminal** (neofetch-style), in `~/.zshrc`:
+
+```sh
+txoko --once --work
+```
+
+```
+                                     txoko · bonsai · autumn · day
+                  #\&                ─────────────────────────────
+            *\@*  | /                growth ▰▰▰▰▰▰▰▰▱▱ 77%
+              _\  &\                 today  22 commits · 1 min focus
+               #& |#&                streak 2 days
+               *&#/%%@               date   Tue 17 Nov
+               %,|& #&
+                 ||
+          \,,~_::,,_,./
+           \_________/
+```
+
+`--size 40x16` changes its size. Without `--work` it shows a fully grown tree.
+
+**A little corner in tmux** — the view adapts to narrow panes: the title shortens and the keys wrap onto extra lines, so every control stays visible:
+
+```sh
+tmux split-window -h -l 32 'txoko --work'
+```
+
+**Your status bar or prompt**, refreshed every few seconds:
+
+```sh
+# ~/.tmux.conf
+set -g status-interval 10
+set -g status-right '#(txoko status) '
+```
+
+`txoko status` prints `🍂 77% · 2d`. Shape it with `--format` and the placeholders `{icon}` `{growth}` `{bar}` `{today}` `{focus}` `{streak}` `{season}`, for example `txoko status --format '{icon} {bar} {today}c'` → `🍂 ▰▰▰▰▱ 22c`.
+
+### Settings
+
+Save your favorite flags in `~/.config/txoko/config.toml` (or `$XDG_CONFIG_HOME/txoko/`). Flags always win over the file.
+
+```sh
+txoko config init    # writes the file with every setting explained
+txoko config         # shows where it is and checks it
+```
+
+```toml
+scene = "bonsai"
+season = ""        # empty follows the calendar
+work = true        # grow from your activity by default (--work=false to override)
+
+[once]
+size = "34x14"
+work = true
+
+[pomodoro]
+break = 5          # rest after every --pomodoro session
+
+[status]
+format = "{icon} {growth}% · {streak}d"
+```
+
+A typo such as `sene = "bonsai"` is reported instead of silently ignored.
+
 ### Seasons
 
 The tree dresses for the time of year, following the calendar (northern hemisphere) unless you pick one with <kbd>e</kbd> or `--season`:
@@ -137,7 +203,7 @@ The tree dresses for the time of year, following the calendar (northern hemisphe
 
 Colors come from your terminal's own palette, so every season matches your theme.
 
-**Nights are soft:** the tree, the pot and the ground dim down, while the sky keeps its own light. The moon is a big pixel-art disc in its **real phase** for today's date, the sky fills with stars of four sizes that twinkle at their own pace, and every now and then a shooting star crosses it. Press <kbd>n</kbd> to switch between day and night; until you do, the sky follows the clock.
+**Nights are soft:** the tree, the pot and the ground dim down, while the sky keeps its own light. The moon is a big pixel-art disc in a different phase every time (<kbd>r</kbd> rolls a new one with a new tree), the sky fills with stars of four sizes that twinkle at their own pace, and every now and then a shooting star crosses it. Press <kbd>n</kbd> to switch between day and night; until you do, the sky follows the clock.
 
 ```
 ╭─ txoko · bonsai · winter · night · paused ───────────────────────────╮
@@ -171,6 +237,9 @@ Colors come from your terminal's own palette, so every season matches your theme
 | `txoko` | open your scene and grow it by hand |
 | `txoko --work` | open your scene, grown by your real activity |
 | `txoko --season winter` | start in a season instead of today's |
+| `txoko --once [--work]` | print the scene once with an info panel (for `.zshrc`) |
+| `txoko status [--format F]` | one line for tmux or your prompt |
+| `txoko config [init]` | show or create the settings file |
 | `txoko --pomodoro M [--break M]` | focus session: a new tree blooms as the minutes pass |
 | `txoko hook install` | record every commit through a global git hook |
 | `txoko hook uninstall` | remove the hook (your history is kept) |

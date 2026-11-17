@@ -122,13 +122,11 @@ func (m Model) handlePomodoroKey(key string) (Model, tea.Cmd, bool) {
 	return m, nil, false
 }
 
-func (m Model) pomodoroFooter(inner int) []string {
+func (m Model) pomodoroParts() (status, compact []span, hints [][]span) {
 	t := m.theme
 	p := m.pomo
 	quit := m.hint("q", "quit")
 
-	var status []span
-	var hints [][]span
 	switch {
 	case p.quitArmed:
 		status = []span{{"press q again to abandon this session", t.Accent}}
@@ -152,7 +150,7 @@ func (m Model) pomodoroFooter(inner int) []string {
 	if p.saveErr != nil {
 		status = append(status, span{"  (not saved)", t.Accent})
 	}
-	return footerBlock(inner, status, status, hints)
+	return status, status, hints
 }
 
 // clock formats a duration as mm:ss, rounding up so a session shows 50:00

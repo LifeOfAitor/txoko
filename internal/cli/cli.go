@@ -17,6 +17,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/x/term"
+
 	"github.com/LifeOfAitor/txoko/internal/notify"
 	"github.com/LifeOfAitor/txoko/internal/progress"
 	"github.com/LifeOfAitor/txoko/internal/scene"
@@ -38,14 +40,18 @@ Usage:
   txoko [flags]            open your scene and grow it by hand with +/-
   txoko --work [flags]     let your real activity grow it instead
   txoko --pomodoro 50      focus for 50 minutes while a new tree grows
+  txoko --once [--work]    print it once, neofetch-style, and exit
   txoko <command>
 
-Commands (for --work):
+Commands:
+  config                   show where the settings file is
+  config init              create it, with every setting explained
   hook install             record every commit (sets a global git hook)
   hook uninstall           remove the hook again
   hook status              show whether the hook is installed
   import [dir...]          import your recent commits from repositories
   stats                    print your activity summary
+  status [--format F]      one line for tmux or your prompt, e.g. "🌳 72%% · 5d"
   log commit               record HEAD (used by the git hook)
 
 Flags:
@@ -56,6 +62,10 @@ Flags:
       --work       grow from your recorded activity (commits and focus)
       --pomodoro M focus session of M minutes: the tree blooms as it ends
       --break M    rest M minutes after the session (with --pomodoro)
+      --once       print the scene once with a little info panel, then exit
+                   (neofetch-style, for your .zshrc); full grown unless
+                   --growth or --work say otherwise
+      --size WxH   scene size for --once (default 34x14)
   -h, --help       show this help
   -v, --version    print version information
 
@@ -91,6 +101,10 @@ func Run(args []string, stdout, stderr io.Writer) int {
 			return runImport(rest, stdout, stderr)
 		case "stats":
 			return runStats(rest, stdout, stderr)
+		case "status":
+			return runStatus(rest, stdout, stderr)
+		case "config":
+			return runConfig(rest, stdout, stderr)
 		case "help":
 			fmt.Fprint(stdout, usage)
 			return ExitOK
@@ -102,6 +116,11 @@ func Run(args []string, stdout, stderr io.Writer) int {
 
 // runScene opens the interactive scene.
 func runScene(args []string, stdout, stderr io.Writer) int {
+	cfg, err := loadConfig()
+	if err != nil {
+		return fail(stderr, err)
+	}
+	// The config file provides the defaults; flags override them.
 	fs := newFlagSet("txoko")
 	var (
 		showVersion, work bool
@@ -109,15 +128,22 @@ func runScene(args []string, stdout, stderr io.Writer) int {
 	)
 	fs.BoolVar(&showVersion, "version", false, "")
 	fs.BoolVar(&showVersion, "v", false, "")
-	fs.BoolVar(&work, "work", false, "")
+	fs.BoolVar(&work, "work", cfg.Work, "")
 	fs.Float64Var(&opts.Growth, "growth", tui.DefaultGrowth, "")
-	fs.Uint64Var(&opts.Seed, "seed", 0, "")
-	fs.StringVar(&opts.Scene, "scene", "", "")
-	fs.StringVar(&opts.Season, "season", "", "")
+	fs.Uint64Var(&opts.Seed, "seed", cfg.Seed, "")
+	fs.StringVar(&opts.Scene, "scene", cfg.Scene, "")
+	fs.StringVar(&opts.Season, "season", cfg.Season, "")
 	focus := minutes{lo: 1, hi: 240}
-	brk := minutes{lo: 0, hi: 120}
+	brk := minutes{lo: 0, hi: 120, n: cfg.Pomodoro.Break}
 	fs.Var(&focus, "pomodoro", "")
 	fs.Var(&brk, "break", "")
+	var once bool
+	size := sceneSize{w: tui.OnceWidth, h: tui.OnceHeight}
+	if cfg.Once.Size != "" {
+		_ = size.Set(cfg.Once.Size) // already validated by loadConfig
+	}
+	fs.BoolVar(&once, "once", false, "")
+	fs.Var(&size, "size", "")
 
 	if code, done := parse(fs, args, stdout, stderr); done {
 		return code
@@ -140,11 +166,28 @@ func runScene(args []string, stdout, stderr io.Writer) int {
 	if _, ok := scene.ParseSeason(opts.Season); opts.Season != "" && !ok {
 		return usageError(stderr, fmt.Sprintf("unknown season %q (use spring, summer, autumn or winter)", opts.Season))
 	}
+	// Asking for a hand-set growth or a pomodoro on the command line beats
+	// `work = true` in the config file.
+	if !flagSet(fs, "work") && (flagSet(fs, "growth") || flagSet(fs, "pomodoro")) {
+		work = false
+	}
+	if once && !flagSet(fs, "work") && !flagSet(fs, "growth") {
+		work = cfg.Once.Work
+	}
 	if work && flagSet(fs, "growth") {
 		return usageError(stderr, "--growth sets the scene by hand, so it can't be combined with --work")
 	}
 	if msg := checkPomodoro(fs, work); msg != "" {
 		return usageError(stderr, msg)
+	}
+	if once {
+		if flagSet(fs, "pomodoro") {
+			return usageError(stderr, "--once prints a single frame, so it can't run a --pomodoro")
+		}
+		return runOnce(opts, work, flagSet(fs, "growth"), size, stdout, stderr)
+	}
+	if flagSet(fs, "size") {
+		return usageError(stderr, "--size only applies to --once")
 	}
 	if focus.n > 0 {
 		opts.Focus = time.Duration(focus.n) * time.Minute
@@ -170,6 +213,61 @@ func runScene(args []string, stdout, stderr io.Writer) int {
 		return fail(stderr, err)
 	}
 	return ExitOK
+}
+
+// runOnce prints the scene a single time. Without --growth or --work the
+// tree is shown fully grown: a greeting should look its best.
+func runOnce(opts tui.Options, work, growthSet bool, size sceneSize, stdout, stderr io.Writer) int {
+	o := tui.OnceOptions{
+		Scene: opts.Scene, Season: opts.Season, Seed: opts.Seed,
+		Growth: 1, Width: size.w, Height: size.h,
+		Color: colorOutput(stdout), Now: now,
+	}
+	if growthSet {
+		o.Growth = opts.Growth
+	}
+	if work {
+		st, err := openStore()
+		if err != nil {
+			return fail(stderr, err)
+		}
+		defer func() { _ = st.Close() }()
+		s, err := summarize(context.Background(), st)
+		if err != nil {
+			return fail(stderr, err)
+		}
+		o.Summary, o.Growth = &s, s.Growth
+	}
+	if err := tui.Once(stdout, o); err != nil {
+		return fail(stderr, err)
+	}
+	return ExitOK
+}
+
+// colorOutput reports whether w should get colors: only when it is a
+// terminal and the user hasn't asked for no color (https://no-color.org).
+var colorOutput = func(w io.Writer) bool {
+	f, ok := w.(*os.File)
+	return ok && term.IsTerminal(f.Fd()) && os.Getenv("NO_COLOR") == ""
+}
+
+// sceneSize is a flag value like "40x16".
+type sceneSize struct{ w, h int }
+
+func (s *sceneSize) String() string { return fmt.Sprintf("%dx%d", s.w, s.h) }
+
+func (s *sceneSize) Set(v string) error {
+	ws, hs, ok := strings.Cut(strings.ToLower(strings.TrimSpace(v)), "x")
+	w, errW := strconv.Atoi(ws)
+	h, errH := strconv.Atoi(hs)
+	if !ok || errW != nil || errH != nil {
+		return fmt.Errorf("use WIDTHxHEIGHT, like 40x16")
+	}
+	if w < 10 || w > 300 || h < 5 || h > 120 {
+		return fmt.Errorf("use a width of 10 to 300 and a height of 5 to 120")
+	}
+	s.w, s.h = w, h
+	return nil
 }
 
 // minutes is a flag value holding a whole number of minutes within a range.
