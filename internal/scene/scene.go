@@ -18,6 +18,9 @@ type State struct {
 	Night bool
 	// Season dresses the scene for the time of year.
 	Season Season
+	// MoonPhase is the moon's place in its cycle: 0 new, 0.25 first
+	// quarter, 0.5 full, 0.75 last quarter. See MoonPhaseOf.
+	MoonPhase float64
 }
 
 // Scene is a drawable theme such as the bonsai or the garden.
