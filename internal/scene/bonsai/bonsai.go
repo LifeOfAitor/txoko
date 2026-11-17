@@ -32,6 +32,8 @@ func Draw(c *canvas.Canvas, seed uint64, s scene.State) {
 		return
 	}
 	if s.Night {
+		shown := int(math.Round(g * float64(len(t.marks))))
+		placeLantern(t, shown, c.Width()).light(c)
 		drawNight(c, seed, t, leaves, g, s.Frame, s.Season)
 	}
 	drawWeather(c, seed, t, leaves, g, s.Frame, s.Season)

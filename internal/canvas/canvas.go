@@ -39,6 +39,8 @@ const (
 	InkAutumnOrange
 	InkAutumnGold
 	InkSnow
+	InkLantern // warm light at night
+	InkGlow    // things lit up close by the lantern
 
 	// InkCount is the number of inks. Keep it last.
 	InkCount
@@ -48,6 +50,9 @@ const (
 type Cell struct {
 	Rune rune
 	Ink  Ink
+	// Shadow marks a cell that is out of the light, e.g. away from the
+	// lantern at night. Themes draw it dimmed.
+	Shadow bool
 }
 
 var blank = Cell{Rune: ' '}
@@ -102,6 +107,14 @@ func (c *Canvas) SetIfEmpty(x, y int, r rune, ink Ink) bool {
 	}
 	c.Set(x, y, r, ink)
 	return true
+}
+
+// Shade puts the cell at (x, y) in shadow. Blank cells are left alone:
+// there's nothing there to darken.
+func (c *Canvas) Shade(x, y int) {
+	if c.In(x, y) && !c.IsEmpty(x, y) {
+		c.cells[y*c.w+x].Shadow = true
+	}
 }
 
 // IsEmpty reports whether (x, y) is inside the canvas and blank.

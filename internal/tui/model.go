@@ -394,7 +394,7 @@ func (m Model) footer(inner int) string {
 	}
 	hints = append(hints, key("s", "scene")...)
 	hints = append(hints, key("e", "season")...)
-	hints = append(hints, key("n", "sky")...)
+	hints = append(hints, key("n", "night")...)
 	hints = append(hints, key("r", "reseed")...)
 	hints = append(hints, key("space", "pause")...)
 	hints = append(hints, span{"q", t.Accent}, span{" quit", t.Muted})
