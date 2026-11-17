@@ -25,9 +25,22 @@ func TestPomodoroFlagErrors(t *testing.T) {
 		args []string
 		want string
 	}{
-		{[]string{"--pomodoro", "0"}, "between 1 and 240"},
-		{[]string{"--pomodoro", "500"}, "between 1 and 240"},
-		{[]string{"--pomodoro", "25", "--break", "-1"}, "between 0 and 120"},
+		// Not whole minutes: decimals, words, empty.
+		{[]string{"--pomodoro", "0.5"}, `invalid value "0.5" for flag -pomodoro: use whole minutes, like 25`},
+		{[]string{"--pomodoro", "25.5"}, "use whole minutes"},
+		{[]string{"--pomodoro", "abc"}, "use whole minutes"},
+		{[]string{"--pomodoro", ""}, "use whole minutes"},
+		{[]string{"--pomodoro=1e3"}, "use whole minutes"},
+		// Out of range: zero, negative, too long.
+		{[]string{"--pomodoro", "0"}, "use between 1 and 240 minutes"},
+		{[]string{"--pomodoro", "-3"}, "use between 1 and 240 minutes"},
+		{[]string{"--pomodoro=-3"}, "use between 1 and 240 minutes"},
+		{[]string{"--pomodoro", "241"}, "use between 1 and 240 minutes"},
+		// The break gets the same treatment.
+		{[]string{"--pomodoro", "25", "--break", "0.5"}, `invalid value "0.5" for flag -break: use whole minutes`},
+		{[]string{"--pomodoro", "25", "--break", "-3"}, "use between 0 and 120 minutes"},
+		{[]string{"--pomodoro", "25", "--break", "121"}, "use between 0 and 120 minutes"},
+		{[]string{"--pomodoro", "25", "--break", "five"}, "use whole minutes"},
 		{[]string{"--break", "5"}, "only works together with --pomodoro"},
 		{[]string{"--pomodoro", "25", "--work"}, "can't be combined with --work"},
 		{[]string{"--pomodoro", "25", "--growth", "0.5"}, "can't be combined with --growth"},
@@ -38,6 +51,34 @@ func TestPomodoroFlagErrors(t *testing.T) {
 		if code != ExitUsage || !strings.Contains(stderr, tt.want) {
 			t.Errorf("%v: exit %d, stderr %q; want %q", tt.args, code, stderr, tt.want)
 		}
+	}
+}
+
+// TestPomodoroLimits checks the exact edges that are allowed.
+func TestPomodoroLimits(t *testing.T) {
+	for _, tt := range []struct {
+		args         []string
+		focus, pause time.Duration
+	}{
+		{[]string{"--pomodoro", "1"}, time.Minute, 0},
+		{[]string{"--pomodoro", "240", "--break", "120"}, 240 * time.Minute, 120 * time.Minute},
+		{[]string{"--pomodoro", " 25 ", "--break", "0"}, 25 * time.Minute, 0},
+	} {
+		calls := fakeTUI(t, nil)
+		if code, _, stderr := run(tt.args...); code != ExitOK {
+			t.Errorf("%v: exit %d %s", tt.args, code, stderr)
+			continue
+		}
+		if o := (*calls)[0]; o.Focus != tt.focus || o.Break != tt.pause {
+			t.Errorf("%v: focus %v break %v", tt.args, o.Focus, o.Break)
+		}
+	}
+}
+
+func TestMinutesString(t *testing.T) {
+	m := minutes{n: 25}
+	if m.String() != "25" {
+		t.Errorf("String() = %q", m.String())
 	}
 }
 

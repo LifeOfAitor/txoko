@@ -13,6 +13,7 @@ import (
 	"io"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -110,9 +111,10 @@ func runScene(args []string, stdout, stderr io.Writer) int {
 	fs.Float64Var(&opts.Growth, "growth", tui.DefaultGrowth, "")
 	fs.Uint64Var(&opts.Seed, "seed", 0, "")
 	fs.StringVar(&opts.Scene, "scene", "", "")
-	var focusMin, breakMin int
-	fs.IntVar(&focusMin, "pomodoro", 0, "")
-	fs.IntVar(&breakMin, "break", 0, "")
+	focus := minutes{lo: 1, hi: 240}
+	brk := minutes{lo: 0, hi: 120}
+	fs.Var(&focus, "pomodoro", "")
+	fs.Var(&brk, "break", "")
 
 	if code, done := parse(fs, args, stdout, stderr); done {
 		return code
@@ -135,12 +137,12 @@ func runScene(args []string, stdout, stderr io.Writer) int {
 	if work && flagSet(fs, "growth") {
 		return usageError(stderr, "--growth sets the scene by hand, so it can't be combined with --work")
 	}
-	if msg := checkPomodoro(fs, focusMin, breakMin, work); msg != "" {
+	if msg := checkPomodoro(fs, work); msg != "" {
 		return usageError(stderr, msg)
 	}
-	if focusMin > 0 {
-		opts.Focus = time.Duration(focusMin) * time.Minute
-		opts.Break = time.Duration(breakMin) * time.Minute
+	if focus.n > 0 {
+		opts.Focus = time.Duration(focus.n) * time.Minute
+		opts.Break = time.Duration(brk.n) * time.Minute
 		opts.OnFocusDone = recordFocus
 		opts.OnBreakDone = func() {
 			_ = notifySend("txoko", "Break's over — press enter to plant another tree.")
@@ -164,19 +166,38 @@ func runScene(args []string, stdout, stderr io.Writer) int {
 	return ExitOK
 }
 
-// checkPomodoro validates the pomodoro flags. It returns a usage message,
+// minutes is a flag value holding a whole number of minutes within a range.
+// The flag package calls Set while parsing, so bad input such as "0.5",
+// "-3" or "abc" is rejected right there, with a message that says what to
+// type instead.
+type minutes struct {
+	n      int
+	lo, hi int
+}
+
+func (m *minutes) String() string { return strconv.Itoa(m.n) }
+
+func (m *minutes) Set(s string) error {
+	n, err := strconv.Atoi(strings.TrimSpace(s))
+	if err != nil {
+		return fmt.Errorf("use whole minutes, like 25")
+	}
+	if n < m.lo || n > m.hi {
+		return fmt.Errorf("use between %d and %d minutes", m.lo, m.hi)
+	}
+	m.n = n
+	return nil
+}
+
+// checkPomodoro validates how the pomodoro flags combine with others. It returns a usage message,
 // or "" when they are fine.
-func checkPomodoro(fs *flag.FlagSet, focusMin, breakMin int, work bool) string {
+func checkPomodoro(fs *flag.FlagSet, work bool) string {
 	switch {
 	case !flagSet(fs, "pomodoro"):
 		if flagSet(fs, "break") {
 			return "--break only works together with --pomodoro"
 		}
 		return ""
-	case focusMin < 1 || focusMin > 240:
-		return fmt.Sprintf("--pomodoro takes minutes between 1 and 240, got %d", focusMin)
-	case breakMin < 0 || breakMin > 120:
-		return fmt.Sprintf("--break takes minutes between 0 and 120, got %d", breakMin)
 	case work:
 		return "--pomodoro grows its own tree, so it can't be combined with --work"
 	case flagSet(fs, "growth"):
