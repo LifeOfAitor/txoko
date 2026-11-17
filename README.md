@@ -116,6 +116,7 @@ The footer counts down, <kbd>space</kbd> pauses (paused time doesn't count), and
 |---|---|
 | <kbd>+</kbd> / <kbd>-</kbd> | grow or shrink the scene (not with `--work`) |
 | <kbd>s</kbd> | switch scene (bonsai, garden) |
+| <kbd>e</kbd> | cycle the season: spring → summer → autumn → winter → today's |
 | <kbd>n</kbd> | cycle the sky: day → night → follow the clock |
 | <kbd>r</kbd> | plant a new layout |
 | <kbd>space</kbd> | pause the animation |
@@ -123,12 +124,49 @@ The footer counts down, <kbd>space</kbd> pauses (paused time doesn't count), and
 
 Flags: `--scene bonsai|garden` picks the scene, `--seed N` picks a layout (by default every machine gets its own tree), `--growth 0..1` sets the starting growth and `--work` grows it from your activity instead. The capture above is `--seed 3` at night.
 
+### Seasons
+
+The tree dresses for the time of year, following the calendar (northern hemisphere) unless you pick one with <kbd>e</kbd> or `--season`:
+
+| Season | The tree | In the air |
+|---|---|---|
+| 🌸 Spring | cherry blossom pinks, a few whole flowers | petals drifting on the breeze |
+| ☀️ Summer | deep layered greens | a leaf now and then, fireflies at night |
+| 🍂 Autumn | reds, oranges and golds; some leaves already on the soil | leaves falling |
+| ❄️ Winter | bare branches, snowy tufts, snow on the soil | snowfall across the whole sky |
+
+Colors come from your terminal's own palette, so every season matches your theme.
+
+```
+╭─ txoko · bonsai · winter · night · paused ───────────────────╮
+│                                 ·                         ☾  │
+│       *      *               ··                         *  · │
+│                  \  .                                        │
+│.           ~*. *_____\                                *      │
+│              _ _~\.   \ .           .*                       │
+│                 * \.. .__\**        /                 .      │
+│                    ~\*\.**·\*   \ =/#  */ *                  │
+│      .   .        ·  _\= *  \ ** |\    /                     │
+│                     ·   _ \_/|/=__ /  |                      │
+│                            _\|.   \& \&                      │
+│                              \\      ·            .          │
+│                               ||               . ·           │
+│           ·                *  ||           *                 │
+│             *                 ||                             │
+│                   \__.__.__.__.__.__.__._/                   │
+│                    \____________________/                    │
+├──────────────────────────────────────────────────────────────┤
+│ growth ▰▰▰▰▰▰▰▰▰▰ 100%  manual              +/- grow  q quit │
+╰──────────────────────────────────────────────────────────────╯
+```
+
 ### Commands
 
 | Command | What it does |
 |---|---|
 | `txoko` | open your scene and grow it by hand |
 | `txoko --work` | open your scene, grown by your real activity |
+| `txoko --season winter` | start in a season instead of today's |
 | `txoko --pomodoro M [--break M]` | focus session: a new tree blooms as the minutes pass |
 | `txoko hook install` | record every commit through a global git hook |
 | `txoko hook uninstall` | remove the hook (your history is kept) |
