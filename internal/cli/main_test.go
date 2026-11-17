@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/LifeOfAitor/txoko/internal/contrib"
 )
 
 // TestMain points every path txoko uses — database, config and git's global
@@ -30,6 +32,9 @@ func TestMain(m *testing.M) {
 	notifySend = func(string, string) error { return nil }
 	// Nor depend on whether a txoko happens to be on the developer's PATH.
 	lookPath = func(string) (string, error) { return "", os.ErrNotExist }
+	// Nor ever talk to the real GitHub, or read the developer's token.
+	githubAPI = "http://127.0.0.1:1/graphql"
+	githubToken = func() (string, error) { return "", contrib.ErrNoToken }
 
 	code := m.Run()
 	_ = os.RemoveAll(tmp)

@@ -190,6 +190,7 @@ A typo such as `sene = "bonsai"` is reported instead of silently ignored.
 | `txoko hook status` | check whether the hook is installed |
 | `txoko import [dir...]` | import your commits from the last 30 days (`--days N`) |
 | `txoko stats` | print growth, today's commits and your streak |
+| `txoko year [--user U] [--local]` | your last year of GitHub contributions: total, best week, longest streak |
 
 ## How it works
 
@@ -208,6 +209,7 @@ A typo such as `sene = "bonsai"` is reported instead of silently ignored.
 - The hook points git's global `core.hooksPath` at `~/.config/txoko/hooks`. It **refuses** to replace a `core.hooksPath` you already set, and passes every hook through to each repository's own `.git/hooks`, so existing hooks keep working.
 - Commits are recorded in the background: committing never gets slower.
 - Repositories that set their own local `core.hooksPath` (Husky, for example) bypass global hooks; use `txoko import` for those.
+- `txoko year` is the only command that goes online, and only to **read** your public contribution calendar from GitHub. It uses the token in `GITHUB_TOKEN`/`GH_TOKEN` or the one the GitHub CLI is logged in with, never stores it, and keeps the calendar for 6 hours. `txoko year --local` stays offline.
 
 ## Roadmap
 

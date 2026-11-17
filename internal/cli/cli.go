@@ -53,6 +53,9 @@ Commands:
   import [dir...]          import your recent commits from repositories
   stats                    print your activity summary
   status [--format F]      one line for tmux or your prompt, e.g. "🌳 72%% · 5d"
+  year [--user U] [--local] [--refresh]
+                           your last year of contributions on GitHub
+                           (--local: from txoko's own record instead)
   log commit               record HEAD (used by the git hook)
 
 Flags:
@@ -108,6 +111,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 			return runStatus(rest, stdout, stderr)
 		case "config":
 			return runConfig(rest, stdout, stderr)
+		case "year":
+			return runYear(rest, stdout, stderr)
 		case "help":
 			fmt.Fprint(stdout, usage)
 			return ExitOK

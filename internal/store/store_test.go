@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"io/fs"
 	"path/filepath"
 	"sync"
 	"testing"
@@ -149,8 +150,9 @@ func TestReopenKeepsDataAndSchema(t *testing.T) {
 		t.Errorf("Count after reopen = %d, want 1", n)
 	}
 	var version int
-	if err := s.db.QueryRow("PRAGMA user_version").Scan(&version); err != nil || version != 2 {
-		t.Errorf("user_version = %d, %v; want 2", version, err)
+	files, _ := fs.Glob(migrations, "migrations/*.sql")
+	if err := s.db.QueryRow("PRAGMA user_version").Scan(&version); err != nil || version != len(files) {
+		t.Errorf("user_version = %d, %v; want %d, one per migration", version, err, len(files))
 	}
 }
 
