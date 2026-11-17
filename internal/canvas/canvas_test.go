@@ -118,3 +118,20 @@ func TestShade(t *testing.T) {
 		t.Error("Set should replace the whole cell, shadow included")
 	}
 }
+
+func TestResize(t *testing.T) {
+	c := New(2, 2)
+	c.Set(0, 0, 'x', InkStem)
+	c.Resize(2, 2) // same size: untouched
+	if c.At(0, 0).Rune != 'x' {
+		t.Error("resizing to the same size should keep the content")
+	}
+	c.Resize(5, 3)
+	if c.Width() != 5 || c.Height() != 3 || !c.IsEmpty(0, 0) {
+		t.Errorf("after resize: %dx%d, empty %v", c.Width(), c.Height(), c.IsEmpty(0, 0))
+	}
+	c.Resize(-1, -1)
+	if c.Width() != 0 || c.Height() != 0 {
+		t.Error("negative sizes become zero")
+	}
+}

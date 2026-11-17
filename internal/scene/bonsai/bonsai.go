@@ -33,7 +33,8 @@ func Draw(c *canvas.Canvas, seed uint64, s scene.State) {
 	}
 	if s.Night {
 		dimForNight(c)
-		drawNight(c, seed, t, leaves, g, s.Frame, s.Season)
+		drawSky(c, seed, t, s.MoonPhase, s.Frame)
+		drawFireflies(c, t, leaves, g, s.Frame, s.Season)
 	}
 	drawWeather(c, seed, t, leaves, g, s.Frame, s.Season)
 }
@@ -103,23 +104,9 @@ func drawPot(c *canvas.Canvas, seed uint64) {
 	c.Set(x0+pw-2, base, '/', canvas.InkPot)
 }
 
-// drawNight adds a moon, a few twinkling stars and, on warm nights,
-// fireflies that hover around the leaves.
-func drawNight(c *canvas.Canvas, seed uint64, t tree, leaves []mark, g float64, frame int, season scene.Season) {
-	w := c.Width()
-	c.SetIfEmpty(w-3, 0, '☾', canvas.InkMoon)
-
-	rng := rand.New(rand.NewPCG(seed, 0x57a75))
-	skyRows := max(1, t.baseY/3)
-	for range max(1, w*skyRows/40) {
-		x, y, phase := rng.IntN(w), rng.IntN(skyRows), rng.IntN(5)
-		glyph := '·'
-		if (frame/6+phase)%5 == 0 {
-			glyph = '✦'
-		}
-		c.SetIfEmpty(x, y, glyph, canvas.InkStar)
-	}
-
+// drawFireflies lets a few fireflies hover around the leaves on warm
+// nights.
+func drawFireflies(c *canvas.Canvas, t tree, leaves []mark, g float64, frame int, season scene.Season) {
 	warm := season == scene.Summer || season == scene.Spring
 	if !warm || len(leaves) == 0 || g < 0.3 {
 		return

@@ -83,7 +83,7 @@ txoko --pomodoro 50               # a new tree grows from a seed to full bloom i
 txoko --pomodoro 25 --break 5     # classic pomodoro with a 5-minute rest
 ```
 
-The footer counts down, <kbd>space</kbd> pauses (paused time doesn't count), and quitting mid-session asks twice so a stray <kbd>q</kbd> never throws away your focus. When the time is up you get a desktop notification, the tree is in full bloom, and <kbd>enter</kbd> plants another one. Completed sessions are saved too, so they also grow your `--work` scene: 25 minutes of focus count like one commit.
+The footer counts down (all keys are always listed, wrapping onto extra lines in narrow panes), <kbd>space</kbd> pauses (paused time doesn't count), and quitting mid-session asks twice so a stray <kbd>q</kbd> never throws away your focus. When the time is up you get a desktop notification, the tree is in full bloom, and <kbd>enter</kbd> plants another one. Completed sessions are saved too, so they also grow your `--work` scene: 25 minutes of focus count like one commit.
 
 ```
 ╭─ txoko · bonsai · night · paused ──────────────────────────────────────╮
@@ -117,7 +117,7 @@ The footer counts down, <kbd>space</kbd> pauses (paused time doesn't count), and
 | <kbd>+</kbd> / <kbd>-</kbd> | grow or shrink the scene (not with `--work`) |
 | <kbd>s</kbd> | switch scene (bonsai, garden) |
 | <kbd>e</kbd> | cycle the season: spring → summer → autumn → winter → today's |
-| <kbd>n</kbd> | cycle the sky: day → night → follow the clock |
+| <kbd>n</kbd> | switch between day and night (until you press it, the sky follows the clock) |
 | <kbd>r</kbd> | plant a new layout |
 | <kbd>space</kbd> | pause the animation |
 | <kbd>q</kbd> | quit |
@@ -137,29 +137,31 @@ The tree dresses for the time of year, following the calendar (northern hemisphe
 
 Colors come from your terminal's own palette, so every season matches your theme.
 
-**Nights are soft:** the tree, the pot and the ground dim down, while the moon, the stars and whatever is falling through the air keep their own light. Press <kbd>n</kbd> to switch between day, night and the real time.
+**Nights are soft:** the tree, the pot and the ground dim down, while the sky keeps its own light. The moon is a big pixel-art disc in its **real phase** for today's date, the sky fills with stars of four sizes that twinkle at their own pace, and every now and then a shooting star crosses it. Press <kbd>n</kbd> to switch between day and night; until you do, the sky follows the clock.
 
 ```
-╭─ txoko · bonsai · winter · night · paused ───────────────────╮
-│                                                           ☾  │
-│              : : .           ✦·                       *    ✦ │
-│                * \....                                       │
-│            ~*. *_____\.                               .      │
-│     .        _ _~\*   \... ·        .*     ·                 │
-│           .      ·\.. .__\::  :   *./.  *                    │
-│                    ~\:\.:*:\** :\ =/.  */ .                  │
-│                     ·_\=**  \*.* |\*  ./                     │
-│                         _ \_/|/=__./  |         .            │
-│                            _\|.   \* \:     *    .           │
-│          ·                *  \\.                ·            │
-│              *                || ·                           │
-│                               ||                             │
-│      *                        ||                         *   │
-│                   \__.__.__.__.__.__.__._/                   │
-│                    \____________________/                    │
-├──────────────────────────────────────────────────────────────┤
-│ growth ▰▰▰▰▰▰▰▰▰▰ 100%  manual              +/- grow  q quit │
-╰──────────────────────────────────────────────────────────────╯
+╭─ txoko · bonsai · winter · night · paused ───────────────────────────╮
+│.                     .                       . : |* *:        *      │
+│                                             * * * *        ░░░██▄    │
+│   +  .                           :  .*       *:  / *  :   ░░░░████   │
+│             * *     · *  *.        .:: * *   :_//* *.*    ░░░░████   │
+│             : .*    : :*      ·**/.*/*.  .  . /* *         ░░░██▀   ✧│
+│         * *  ._\ .     \.::.  :.\  \ . **.* /                ·      ·│
+│           * *  .\ **.:  |* .** :  :./: **/_=     *        · ·✧·      │
+│   ·       :    .  _~\   \    *.   |/ */~      .: *    .      ·   ·   │
+│      ·                _\ \.\  :_=.. /|  ../·::*/**. :    ·     ·   · │
+│            ·             _/* \.*:~/_  . /_.*:/ :*       .            │
+│           .                *  *_\| . ·\_____=   : .    ·  ·          │
+│               *                  ~||                                 │
+│                                   ||                    ·            │
+│      *                            ||                                 │
+│                                   ||                            *    │
+│                · *         *      ||                                 │
+│                     \.__.__.__.__.__.__.__.__._/                     │
+│                      \________________________/                      │
+├──────────────────────────────────────────────────────────────────────┤
+│ growth ▰▰▰▰▰▰▰▰▰▰ 100%  manual                      +/- grow  q quit │
+╰──────────────────────────────────────────────────────────────────────╯
 ```
 
 ### Commands

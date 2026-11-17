@@ -39,6 +39,9 @@ const (
 	InkAutumnOrange
 	InkAutumnGold
 	InkSnow
+	InkStarDim    // the faintest, most distant stars
+	InkStarBright // the brightest stars
+	InkMoonDark   // the unlit part of the moon
 
 	// InkCount is the number of inks. Keep it last.
 	InkCount
@@ -70,6 +73,18 @@ func New(w, h int) *Canvas {
 	c := &Canvas{w: w, h: h, cells: make([]Cell, w*h)}
 	c.Clear()
 	return c
+}
+
+// Resize changes the canvas size in place, clearing it. Keeping the same
+// *Canvas lets a UI hold on to it while its layout changes.
+func (c *Canvas) Resize(w, h int) {
+	w, h = max(w, 0), max(h, 0)
+	if w == c.w && h == c.h {
+		return
+	}
+	c.w, c.h = w, h
+	c.cells = make([]Cell, w*h)
+	c.Clear()
 }
 
 // Width returns the number of columns.

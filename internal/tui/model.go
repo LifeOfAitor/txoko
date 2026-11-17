@@ -270,7 +270,12 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case "e":
 		m = m.nextSeason()
 	case "n":
-		m.sky = (m.sky + 1) % 3
+		// One press flips what you see: day becomes night and back.
+		if m.night() {
+			m.sky = skyDay
+		} else {
+			m.sky = skyNight
+		}
 	case "s":
 		m.scene = (m.scene + 1) % len(scenes)
 	case "r":
@@ -342,38 +347,60 @@ func (m Model) render() string {
 		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, msg)
 	}
 
-	inner := m.canvas.Width()
+	inner := m.width - 2
+	footer := m.footer(inner)
+	// The scene fills what the borders, the title and the footer leave.
+	m.canvas.Resize(inner, max(1, m.height-3-len(footer)))
 	night := m.night()
 	scenes[m.scene].Draw(m.canvas, m.seed, scene.State{
 		Growth: m.growth, Frame: m.frame, Night: night, Season: m.currentSeason(),
+		MoonPhase: scene.MoonPhaseOf(m.now()),
 	})
 
-	return frame(inner, m.title(night), renderCanvas(m.canvas, m.theme), m.footer(inner), m.theme)
+	return frame(inner, m.title(night, inner), renderCanvas(m.canvas, m.theme), footer, m.theme)
 }
 
-func (m Model) title(night bool) []span {
+// title builds the frame's title, dropping the least important parts until
+// it fits in inner cells: scene name first, then the season, then the sky.
+// What's happening right now (focus, break, paused) is kept the longest.
+func (m Model) title(night bool, inner int) []span {
 	t := m.theme
 	sky := "day"
 	if night {
 		sky = "night"
 	}
-	title := []span{
-		{"txoko", t.Title},
-		{" · " + scenes[m.scene].Name() + " · " + m.currentSeason().String() + " · " + sky, t.Muted},
-	}
+	var status []span
 	switch m.pomo.phase {
 	case phaseFocus:
-		title = append(title, span{" · focus", t.Accent})
+		status = append(status, span{" · focus", t.Accent})
 	case phaseBreak:
-		title = append(title, span{" · break", t.Accent})
+		status = append(status, span{" · break", t.Accent})
 	}
 	if m.paused {
-		title = append(title, span{" · paused", t.Accent})
+		status = append(status, span{" · paused", t.Accent})
 	}
-	return title
+
+	scene, season := scenes[m.scene].Name(), m.currentSeason().String()
+	for _, details := range []string{
+		" · " + scene + " · " + season + " · " + sky,
+		" · " + season + " · " + sky,
+		" · " + sky,
+		"",
+	} {
+		title := append([]span{{"txoko", t.Title}, {details, t.Muted}}, status...)
+		if spansWidth(title)+3 <= inner {
+			return title
+		}
+	}
+	return []span{{"txoko", t.Title}}
 }
 
-func (m Model) footer(inner int) string {
+// hint is one entry of the key cheat sheet: the key and what it does.
+func (m Model) hint(key, label string) []span {
+	return []span{{key, m.theme.Accent}, {" " + label, m.theme.Muted}}
+}
+
+func (m Model) footer(inner int) []string {
 	if m.pomodoroOn() {
 		return m.pomodoroFooter(inner)
 	}
@@ -384,33 +411,22 @@ func (m Model) footer(inner int) string {
 		{empty, t.Muted},
 		{fmt.Sprintf(" %3.0f%%", m.growth*100), t.Accent},
 	}
-	full := append([]span{{"growth ", t.Muted}}, bar...)
-	full = append(full, m.status()...)
+	status := append([]span{{"growth ", t.Muted}}, bar...)
+	status = append(status, m.status()...)
 
-	key := func(k, label string) []span { return []span{{k, t.Accent}, {" " + label + "  ", t.Muted}} }
-	var hints []span
+	var hints [][]span
 	if !m.live() {
-		hints = append(hints, key("+/-", "grow")...)
+		hints = append(hints, m.hint("+/-", "grow"))
 	}
-	hints = append(hints, key("s", "scene")...)
-	hints = append(hints, key("e", "season")...)
-	hints = append(hints, key("n", "night")...)
-	hints = append(hints, key("r", "reseed")...)
-	hints = append(hints, key("space", "pause")...)
-	hints = append(hints, span{"q", t.Accent}, span{" quit", t.Muted})
-	var shortHints []span
-	if !m.live() {
-		shortHints = key("+/-", "grow")
-	}
-	shortHints = append(shortHints, span{"q", t.Accent}, span{" quit", t.Muted})
-
-	// From richest to most compact; the first that fits wins.
-	return footerLine(inner,
-		layout{full, hints},
-		layout{full, shortHints},
-		layout{full, nil},
-		layout{bar, nil},
+	hints = append(hints,
+		m.hint("s", "scene"),
+		m.hint("e", "season"),
+		m.hint("n", "night"),
+		m.hint("r", "reseed"),
+		m.hint("space", "pause"),
+		m.hint("q", "quit"),
 	)
+	return footerBlock(inner, status, bar, hints)
 }
 
 // status is the part of the footer that describes where growth comes from.

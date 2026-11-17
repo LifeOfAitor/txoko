@@ -27,6 +27,21 @@ type tree struct {
 	baseY int    // lowest row the tree may use (just above the pot)
 	w     int
 	used  []bool // cells the fully grown tree occupies, row by row
+
+	// The fully grown crown's bounding box.
+	top, left, right int
+	// skyline[x] is the highest row the grown tree reaches around column x
+	// (baseY+1 where there's no tree), so the sky can follow its silhouette.
+	skyline []int
+}
+
+// underCanopy reports whether (x, y) is at or below the tree's silhouette,
+// widened by margin rows: the part of the picture the sky stays out of.
+func (t tree) underCanopy(x, y, margin int) bool {
+	if x < 0 || x >= len(t.skyline) {
+		return false
+	}
+	return y >= t.skyline[x]-margin && y <= t.baseY
 }
 
 // willGrow reports whether the fully grown tree has something at (x, y).
@@ -91,6 +106,10 @@ func simulate(seed uint64, w, h int) tree {
 	// are about twice as tall as wide, so a crown ~w cells wide looks right
 	// on a tree about w/2 rows tall: cap the height the tree plans for.
 	areaH = min(areaH, max(3, w*55/100))
+	// Leave the top of the picture to the sky, even in wide, short panes.
+	if areaH >= 8 {
+		areaH -= max(2, areaH/5)
+	}
 	g.leafR = min(max(areaH/8, 1), 3)
 	g.nextSide = []int{-1, 1}[g.rng.IntN(2)]
 
@@ -116,6 +135,17 @@ func simulate(seed uint64, w, h int) tree {
 // order they were laid down in, so the reveal is stable.
 func (g *grower) finish() {
 	g.t.w, g.t.used = g.w, g.occupied
+	g.t.top, g.t.left, g.t.right = g.t.baseY+1, g.w, -1
+	g.t.skyline = make([]int, g.w)
+	for x := range g.t.skyline {
+		g.t.skyline[x] = g.t.baseY + 1
+	}
+	for _, m := range g.t.marks {
+		g.t.top, g.t.left, g.t.right = min(g.t.top, m.y), min(g.t.left, m.x), max(g.t.right, m.x)
+		for x := max(0, m.x-1); x <= min(g.w-1, m.x+1); x++ {
+			g.t.skyline[x] = min(g.t.skyline[x], m.y)
+		}
+	}
 	slices.SortStableFunc(g.t.marks, func(a, b mark) int { return a.tick - b.tick })
 }
 
