@@ -1,4 +1,4 @@
-package bonsai
+package nature
 
 import (
 	"math"
@@ -7,10 +7,20 @@ import (
 	"github.com/LifeOfAitor/txoko/internal/canvas"
 )
 
-// drawSky paints the night sky: the moon in its real phase, stars of four
+// Canopy is the solid part of a scene that the sky stays out of: a tree, an
+// island, a wall.
+type Canopy interface {
+	// UnderCanopy reports whether (x, y) is at or below the silhouette,
+	// widened by margin rows.
+	UnderCanopy(x, y, margin int) bool
+	// Floor is the lowest row of the sky.
+	Floor() int
+}
+
+// DrawSky paints the night sky: the moon in the given phase, stars of four
 // sizes that twinkle at their own pace, and now and then a shooting star.
-// Everything stays above the tree's silhouette.
-func drawSky(c *canvas.Canvas, seed uint64, t tree, moonPhase float64, frame int) {
+// Everything stays above the canopy's silhouette.
+func DrawSky(c *canvas.Canvas, seed uint64, t Canopy, moonPhase float64, frame int) {
 	moon := drawMoon(c, t, moonPhase)
 	drawStars(c, seed, t, moon, frame)
 	drawShootingStar(c, seed, t, frame)
@@ -28,22 +38,22 @@ func (b box) contains(x, y, margin int) bool {
 // vertically (the ▀ and ▄ half blocks), so the disc comes out round. The
 // sunlit part is solid; the rest is a faint texture, so the whole disc is
 // always visible, like earthshine on a real night.
-func drawMoon(c *canvas.Canvas, t tree, phase float64) box {
+func drawMoon(c *canvas.Canvas, t Canopy, phase float64) box {
 	w := c.Width()
 	// The disc is r rows tall and 2r cells wide. It grows with the screen,
 	// stays within the upper half of the sky, and shrinks if it would touch
 	// the crown.
-	r := min(max(w/12, 2), 6, max(1, t.baseY/2))
+	r := min(max(w/12, 2), 6, max(1, t.Floor()/2))
 	place := func(r int) box {
 		x0, y0 := w-3-2*r, 0
-		if t.baseY > 3*r {
+		if t.Floor() > 3*r {
 			y0 = 1 // a little breathing room when the sky is tall
 		}
 		return box{x0, y0, x0 + 2*r - 1, y0 + r - 1}
 	}
 	touches := func(b box) bool {
 		for x := b.x0 - 2; x <= b.x1+2; x++ {
-			if t.underCanopy(x, b.y1, 1) {
+			if t.UnderCanopy(x, b.y1, 1) {
 				return true
 			}
 		}
@@ -105,9 +115,9 @@ const (
 
 // drawStars scatters stars over the open sky. Most are tiny and faint, a
 // few are bright, and the biggest sparkle with little rays.
-func drawStars(c *canvas.Canvas, seed uint64, t tree, moon box, frame int) {
+func drawStars(c *canvas.Canvas, seed uint64, t Canopy, moon box, frame int) {
 	w := c.Width()
-	rows := max(2, t.baseY*3/4) // keep the lowest sky, near the pot, clear
+	rows := max(2, t.Floor()*3/4) // keep the lowest sky, near the pot, clear
 	rng := rand.New(rand.NewPCG(seed, uint64(w)<<20|uint64(c.Height())^0x57a75))
 
 	count := max(3, w*rows/12)
@@ -122,10 +132,10 @@ func drawStars(c *canvas.Canvas, seed uint64, t tree, moon box, frame int) {
 		case v > 0.6:
 			size = small
 		}
-		if t.underCanopy(x, y, 1) || moon.contains(x, y, 1) {
+		if t.UnderCanopy(x, y, 1) || moon.contains(x, y, 1) {
 			continue
 		}
-		if size == big && (t.underCanopy(x-1, y, 1) || t.underCanopy(x+1, y, 1) || t.underCanopy(x, y+1, 1)) {
+		if size == big && (t.UnderCanopy(x-1, y, 1) || t.UnderCanopy(x+1, y, 1) || t.UnderCanopy(x, y+1, 1)) {
 			size = medium // its rays would reach into the tree
 		}
 		drawStar(c, x, y, size, phase, frame)
@@ -161,29 +171,29 @@ func drawStar(c *canvas.Canvas, x, y, size, phase, frame int) {
 	}
 }
 
-// Shooting stars: one crosses the sky every shootingEvery frames and is
-// visible for shootingFor frames.
+// Shooting stars: one crosses the sky every ShootingEvery frames and is
+// visible for ShootingFor frames.
 const (
-	shootingEvery = 360
-	shootingFor   = 14
+	ShootingEvery = 360
+	ShootingFor   = 14
 )
 
-func drawShootingStar(c *canvas.Canvas, seed uint64, t tree, frame int) {
-	step := frame % shootingEvery
-	if step >= shootingFor {
+func drawShootingStar(c *canvas.Canvas, seed uint64, t Canopy, frame int) {
+	step := frame % ShootingEvery
+	if step >= ShootingFor {
 		return
 	}
-	cycle := uint64(frame / shootingEvery)
+	cycle := uint64(frame / ShootingEvery)
 	rng := rand.New(rand.NewPCG(seed, cycle^0x5ad))
 	w := c.Width()
 	startX := w/2 + rng.IntN(max(1, w/2))
-	startY := rng.IntN(max(1, t.baseY/3))
+	startY := rng.IntN(max(1, t.Floor()/3))
 
 	// It falls down and to the left, leaving a short fading trail.
 	headX, headY := startX-2*step, startY+step/2
 	for i, glyph := range []rune{'✦', '·', '·', '.'} {
 		x, y := headX+2*i, headY-i/2
-		if t.underCanopy(x, y, 0) {
+		if t.UnderCanopy(x, y, 0) {
 			continue
 		}
 		ink := canvas.InkStar

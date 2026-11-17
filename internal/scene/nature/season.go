@@ -1,21 +1,21 @@
-package bonsai
+package nature
 
 import (
 	"github.com/LifeOfAitor/txoko/internal/canvas"
 	"github.com/LifeOfAitor/txoko/internal/scene"
 )
 
-// dressLeaf decides how one leaf looks in a season: its glyph and ink, and
+// DressLeaf decides how one leaf looks in a season: its glyph and ink, and
 // whether it is still on the tree at all. The choice depends only on the
 // leaf's position, so every leaf keeps its color from frame to frame and
 // growing the tree never recolors what was already there.
-func dressLeaf(m mark, season scene.Season) (rune, canvas.Ink, bool) {
-	v := noise(m.x, m.y, uint64(season)+1)
+func DressLeaf(m Mark, season scene.Season) (rune, canvas.Ink, bool) {
+	v := Noise(m.X, m.Y, uint64(season)+1)
 	switch season {
 	case scene.Spring:
 		// Full cherry blossom: two pinks and, here and there, a whole flower.
-		r := m.r
-		if noise(m.x, m.y, 77) < 0.1 {
+		r := m.R
+		if Noise(m.X, m.Y, 77) < 0.1 {
 			r = '✿'
 		}
 		if v < 0.65 {
@@ -28,24 +28,24 @@ func dressLeaf(m mark, season scene.Season) (rune, canvas.Ink, bool) {
 		case v < 0.1:
 			return 0, 0, false // already fallen
 		case v < 0.4:
-			return m.r, canvas.InkAutumnRed, true
+			return m.R, canvas.InkAutumnRed, true
 		case v < 0.7:
-			return m.r, canvas.InkAutumnOrange, true
+			return m.R, canvas.InkAutumnOrange, true
 		}
-		return m.r, canvas.InkAutumnGold, true
+		return m.R, canvas.InkAutumnGold, true
 
 	case scene.Winter:
 		// Bare in places, the rest of the crown heavy with snow.
 		if v < 0.4 {
 			return 0, 0, false
 		}
-		snow := []rune("**.:*")[int(noise(m.x, m.y, 91)*5)]
+		snow := []rune("**.:*")[int(Noise(m.X, m.Y, 91)*5)]
 		if v < 0.75 {
 			return snow, canvas.InkSnow, true
 		}
 		return snow, canvas.InkBlossomLight, true
 	}
-	return m.r, m.ink, true
+	return m.R, m.Ink, true
 }
 
 // weather is what falls through the air in each season.
@@ -70,14 +70,14 @@ func weatherFor(season scene.Season, w, h int) weather {
 	return weather{2, 0.6, 90, []rune{',', '`'}, []canvas.Ink{canvas.InkLeafDim}, true}
 }
 
-// drawWeather animates falling petals, leaves or snow.
-func drawWeather(c *canvas.Canvas, seed uint64, t tree, leaves []mark, g float64, frame int, season scene.Season) {
+// DrawWeather animates falling petals, leaves or snow down to the floor row.
+func DrawWeather(c *canvas.Canvas, seed uint64, floor int, leaves []Mark, g float64, frame int, season scene.Season) {
 	wx := weatherFor(season, c.Width(), c.Height())
 	if g < wx.minGrow {
 		return
 	}
 	if !wx.fromTree {
-		drawSnowfall(c, seed, t, wx, frame)
+		drawSnowfall(c, seed, floor, wx, frame)
 		return
 	}
 	if len(leaves) == 0 {
@@ -87,11 +87,11 @@ func drawWeather(c *canvas.Canvas, seed uint64, t tree, leaves []mark, g float64
 		f := frame + i*47
 		from := leaves[(f/wx.period*31+i*13)%len(leaves)]
 		step := f % wx.period
-		y := from.y + 1 + step/4
-		if y > t.baseY {
+		y := from.Y + 1 + step/4
+		if y > floor {
 			continue
 		}
-		x := from.x + triangle(step/5, 3) - 1
+		x := from.X + Triangle(step/5, 3) - 1
 		if season == scene.Spring {
 			x += step / 9 // petals ride the breeze sideways
 		}
@@ -102,55 +102,36 @@ func drawWeather(c *canvas.Canvas, seed uint64, t tree, leaves []mark, g float64
 
 // drawSnowfall lets snowflakes drift down the whole sky, each in its own
 // lane and at its own pace.
-func drawSnowfall(c *canvas.Canvas, seed uint64, t tree, wx weather, frame int) {
+func drawSnowfall(c *canvas.Canvas, seed uint64, floor int, wx weather, frame int) {
 	w := c.Width()
-	rows := t.baseY + 1
+	rows := floor + 1
 	for i := range wx.count {
-		lane := int(noise(i, int(seed%9973), 11) * float64(w))
-		speed := 2 + int(noise(i, 3, 12)*3) // frames per row: 2, 3 or 4
-		offset := int(noise(i, 5, 13) * float64(rows*speed))
+		lane := int(Noise(i, int(seed%9973), 11) * float64(w))
+		speed := 2 + int(Noise(i, 3, 12)*3) // frames per row: 2, 3 or 4
+		offset := int(Noise(i, 5, 13) * float64(rows*speed))
 		y := ((frame + offset) / speed) % rows
-		x := lane + triangle((frame+offset)/7, 3) - 1
+		x := lane + Triangle((frame+offset)/7, 3) - 1
 		c.SetIfEmpty(x, y, wx.glyphs[i%len(wx.glyphs)], wx.inks[i%len(wx.inks)])
 	}
 }
 
-// dressGround adds what a season leaves around the tree: fallen autumn
-// leaves on the soil, snow on the soil and on top of the branches.
-func dressGround(c *canvas.Canvas, t tree, visible []mark, season scene.Season) {
-	rim := c.Height() - potHeight
-	switch season {
-	case scene.Autumn:
-		for x := range c.Width() {
-			if cell := c.At(x, rim); cell.Ink == canvas.InkSoil || cell.Ink == canvas.InkPot && cell.Rune == '_' {
-				if v := noise(x, rim, 21); v < 0.35 {
-					inks := []canvas.Ink{canvas.InkAutumnRed, canvas.InkAutumnOrange, canvas.InkAutumnGold}
-					c.Set(x, rim, ',', inks[int(v*100)%len(inks)])
-				}
-			}
-		}
-	case scene.Winter:
-		for x := range c.Width() {
-			if cell := c.At(x, rim); cell.Ink == canvas.InkSoil || cell.Ink == canvas.InkPot && cell.Rune == '_' {
-				c.Set(x, rim, []rune{'_', '.', '_'}[x%3], canvas.InkSnow)
-			}
-		}
-		// Snow settles on top of some branches, but never where the tree
-		// will grow later: growing must only ever add to the picture.
-		for _, m := range visible {
-			if !m.leaf && noise(m.x, m.y, 31) < 0.75 && !t.willGrow(m.x, m.y-1) {
-				c.SetIfEmpty(m.x, m.y-1, '.', canvas.InkSnow)
-			}
-		}
-	}
-}
-
-// noise returns a stable pseudo-random number in [0, 1) for a cell, so the
+// Noise returns a stable pseudo-random number in [0, 1) for a cell, so the
 // same leaf always gets the same color (splitmix64 finalizer).
-func noise(x, y int, salt uint64) float64 {
+func Noise(x, y int, salt uint64) float64 {
 	z := uint64(x)*0x9e3779b97f4a7c15 ^ uint64(y)*0xc2b2ae3d27d4eb4f ^ salt*0x165667b19e3779f9
 	z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9
 	z = (z ^ (z >> 27)) * 0x94d049bb133111eb
 	z ^= z >> 31
 	return float64(z>>11) / (1 << 53)
+}
+
+// SnowOnBranches lets snow settle on top of some branches. It never settles
+// where the tree will grow later: growing must only ever add to the
+// picture. dx shifts the tree like in Reveal.
+func SnowOnBranches(c *canvas.Canvas, t Tree, visible []Mark, dx int) {
+	for _, m := range visible {
+		if !m.Leaf && Noise(m.X, m.Y, 31) < 0.75 && !t.WillGrow(m.X, m.Y-1) {
+			c.SetIfEmpty(m.X+dx, m.Y-1, '.', canvas.InkSnow)
+		}
+	}
 }

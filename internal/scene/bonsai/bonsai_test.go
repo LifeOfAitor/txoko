@@ -6,6 +6,7 @@ import (
 
 	"github.com/LifeOfAitor/txoko/internal/canvas"
 	"github.com/LifeOfAitor/txoko/internal/scene"
+	"github.com/LifeOfAitor/txoko/internal/scene/nature"
 	"github.com/LifeOfAitor/txoko/internal/testutil/golden"
 )
 
@@ -97,12 +98,12 @@ func isFallingLeaf(c canvas.Cell) bool {
 }
 
 func TestGrowthRevealsEvenly(t *testing.T) {
-	tr := simulate(testSeed, 60, 20)
-	if len(tr.marks) < 50 {
-		t.Fatalf("tree has only %d marks", len(tr.marks))
+	tr := nature.Grow(testSeed, 60, 20)
+	if len(tr.Marks) < 50 {
+		t.Fatalf("tree has only %d marks", len(tr.Marks))
 	}
-	for i := 1; i < len(tr.marks); i++ {
-		if tr.marks[i].tick < tr.marks[i-1].tick {
+	for i := 1; i < len(tr.Marks); i++ {
+		if tr.Marks[i].Tick < tr.Marks[i-1].Tick {
 			t.Fatalf("marks out of growth order at %d", i)
 		}
 	}
@@ -130,13 +131,13 @@ func TestGrowthRevealsEvenly(t *testing.T) {
 func TestTallPaneKeepsProportions(t *testing.T) {
 	const w, h = 58, 70
 	for _, seed := range []uint64{1, 2, 3, testSeed, 99, 12345} {
-		tr := simulate(seed, w, h)
+		tr := nature.Grow(seed, w, h)
 		top := h
-		for _, m := range tr.marks {
-			top = min(top, m.y)
+		for _, m := range tr.Marks {
+			top = min(top, m.Y)
 		}
 		// About as tall as half the width looks like a tree; much more is a pole.
-		if treeH := tr.baseY - top + 1; treeH > w/2 {
+		if treeH := tr.BaseY - top + 1; treeH > w/2 {
 			t.Errorf("seed %d: tree is %d rows tall in a %dx%d pane, want at most %d", seed, treeH, w, h, w/2)
 		}
 	}
@@ -222,61 +223,5 @@ func TestAnySizeIsSafe(_ *testing.T) {
 				}
 			}
 		}
-	}
-}
-
-func TestCacheFollowsSeedAndSize(t *testing.T) {
-	a := grown(1, 40, 12)
-	b := grown(2, 40, 12)
-	c := grown(1, 41, 12)
-	if len(a.marks) == 0 || equalMarks(a, b) || equalMarks(a, c) {
-		t.Error("cache returned a tree for the wrong seed or size")
-	}
-	if !equalMarks(grown(1, 40, 12), a) {
-		t.Error("cache should return the same tree for the same inputs")
-	}
-}
-
-func equalMarks(a, b tree) bool {
-	if len(a.marks) != len(b.marks) {
-		return false
-	}
-	for i := range a.marks {
-		if a.marks[i] != b.marks[i] {
-			return false
-		}
-	}
-	return true
-}
-
-func TestGlyphs(t *testing.T) {
-	g := &grower{}
-	cases := []struct {
-		dx, dy int
-		want   rune
-	}{
-		{0, -1, '|'},
-		{-1, -1, '\\'},
-		{1, -1, '/'},
-		{1, 1, '\\'},
-		{-1, 1, '/'},
-		{0, 1, '|'},
-	}
-	for _, c := range cases {
-		if got := g.glyph(limb, c.dx, c.dy); got != c.want {
-			t.Errorf("glyph(%d,%d) = %q, want %q", c.dx, c.dy, got, c.want)
-		}
-	}
-}
-
-func TestTriangle(t *testing.T) {
-	want := []int{2, 1, 0, 1, 2, 3, 2, 1, 0, 1}
-	for i, w := range want {
-		if got := triangle(i-2, 4); got != w {
-			t.Errorf("triangle(%d, 4) = %d, want %d", i-2, got, w)
-		}
-	}
-	if triangle(3, 1) != 0 {
-		t.Error("triangle with n<=1 should be 0")
 	}
 }

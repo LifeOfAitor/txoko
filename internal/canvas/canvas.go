@@ -42,6 +42,10 @@ const (
 	InkStarDim    // the faintest, most distant stars
 	InkStarBright // the brightest stars
 	InkMoonDark   // the unlit part of the moon
+	InkRock       // stone edges
+	InkRockDim    // stone texture
+	InkWater      // falling water
+	InkWaterDim   // spray and mist
 
 	// InkCount is the number of inks. Keep it last.
 	InkCount

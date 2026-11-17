@@ -4,11 +4,13 @@ import (
 	"github.com/LifeOfAitor/txoko/internal/scene"
 	"github.com/LifeOfAitor/txoko/internal/scene/bonsai"
 	"github.com/LifeOfAitor/txoko/internal/scene/garden"
+	"github.com/LifeOfAitor/txoko/internal/scene/island"
 )
 
 // scenes lists every available scene. The first one is the default.
 var scenes = []scene.Scene{
 	bonsai.Scene{},
+	island.Scene{},
 	garden.Scene{},
 }
 
