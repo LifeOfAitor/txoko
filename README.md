@@ -130,29 +130,31 @@ The tree dresses for the time of year, following the calendar (northern hemisphe
 
 | Season | The tree | In the air |
 |---|---|---|
-| 🌸 Spring | cherry blossom pinks, a few whole flowers | petals drifting on the breeze |
+| 🌸 Spring | full cherry blossom in two pinks, whole flowers here and there | petals drifting on the breeze |
 | ☀️ Summer | deep layered greens | a leaf now and then, fireflies at night |
-| 🍂 Autumn | reds, oranges and golds; some leaves already on the soil | leaves falling |
-| ❄️ Winter | bare branches, snowy tufts, snow on the soil | snowfall across the whole sky |
+| 🍂 Autumn | reds, oranges and golds; some leaves already on the soil | plenty of leaves falling |
+| ❄️ Winter | a snowy crown, snow on the branches and the soil | snowfall across the whole sky |
 
 Colors come from your terminal's own palette, so every season matches your theme.
 
+**Nights are cozy:** a paper lantern `¤` hangs from a branch. What's close to it glows warm, everything beyond its reach falls into shadow, and only the moon, the stars and whatever is falling through the air keep their own light. Press <kbd>n</kbd> to switch between day, night and the real time.
+
 ```
 ╭─ txoko · bonsai · winter · night · paused ───────────────────╮
-│                                 ·                         ☾  │
-│       *      *               ··                         *  · │
-│                  \  .                                        │
-│.           ~*. *_____\                                *      │
-│              _ _~\.   \ .           .*                       │
-│                 * \.. .__\**        /                 .      │
-│                    ~\*\.**·\*   \ =/#  */ *                  │
-│      .   .        ·  _\= *  \ ** |\    /                     │
-│                     ·   _ \_/|/=__ /  |                      │
-│                            _\|.   \& \&                      │
-│                              \\      ·            .          │
-│                               ||               . ·           │
-│           ·                *  ||           *                 │
-│             *                 ||                             │
+│                                                           ☾  │
+│.             : : .           ✦·                            ✦ │
+│                * \....                                *      │
+│            ~*. *_____\.                               .      │
+│              _ _~\*   \...          .*    ·                  │
+│     .        :   ·\.. .__\::  :   *./.  *                    │
+│           .  ¤     ~\:\.:*:\** :\ =/.  */ .                  │
+│                     ·_\=**  \*.* |\*  ./                     │
+│                         _ \_/|/=__./  |                      │
+│                            _\|.   \* \:         ..           │
+│          ·                   \\.            *    ·           │
+│              *            *   ||                             │
+│                               || ·                           │
+│      *                        ||                         *   │
 │                   \__.__.__.__.__.__.__._/                   │
 │                    \____________________/                    │
 ├──────────────────────────────────────────────────────────────┤
