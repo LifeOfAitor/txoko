@@ -10,7 +10,7 @@ LDFLAGS := -s -w \
 
 .DEFAULT_GOAL := help
 
-.PHONY: help build run test cover lint fmt check clean demo
+.PHONY: help build run test cover lint fmt check clean demo snapshot
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z_-]+:.*##/ {printf "  \033[32m%-8s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -45,5 +45,8 @@ demo: build ## Record the README images with VHS (brew install vhs)
 	@rm -f docs/images/season-*.gif docs/images/once.gif docs/images/tmux.gif
 	@tmux -L txoko-readme kill-server 2>/dev/null || true
 
+snapshot: ## Build a full release locally, publishing nothing (brew install goreleaser)
+	HOMEBREW_TAP_GITHUB_TOKEN=unused goreleaser release --snapshot --clean
+
 clean: ## Remove build artifacts
-	rm -rf bin coverage.out
+	rm -rf bin dist coverage.out

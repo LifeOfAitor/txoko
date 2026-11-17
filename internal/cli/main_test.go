@@ -28,6 +28,8 @@ func TestMain(m *testing.M) {
 	}
 	// Never pop up real desktop notifications from tests.
 	notifySend = func(string, string) error { return nil }
+	// Nor depend on whether a txoko happens to be on the developer's PATH.
+	lookPath = func(string) (string, error) { return "", os.ErrNotExist }
 
 	code := m.Run()
 	_ = os.RemoveAll(tmp)

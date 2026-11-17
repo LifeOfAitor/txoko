@@ -282,3 +282,43 @@ func TestSeasonFlag(t *testing.T) {
 		t.Errorf("--season monsoon: exit %d %q", code, stderr)
 	}
 }
+
+// TestStableExecutable: when txoko on the PATH is a link to this binary
+// (Homebrew's /opt/homebrew/bin/txoko → Cellar/txoko/0.1.0/bin/txoko), the
+// hook must call the stable link, which survives `brew upgrade`.
+func TestStableExecutable(t *testing.T) {
+	dir := t.TempDir()
+	cellar := filepath.Join(dir, "Cellar", "txoko", "0.1.0", "bin", "txoko")
+	if err := os.MkdirAll(filepath.Dir(cellar), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(cellar, []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(dir, "bin", "txoko")
+	if err := os.MkdirAll(filepath.Dir(link), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(cellar, link); err != nil {
+		t.Fatal(err)
+	}
+	other := filepath.Join(dir, "other-txoko")
+	if err := os.WriteFile(other, []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	orig := lookPath
+	t.Cleanup(func() { lookPath = orig })
+
+	lookPath = func(string) (string, error) { return link, nil }
+	if got := stableExecutable(cellar); got != link {
+		t.Errorf("the PATH link to this binary should win: got %s", got)
+	}
+	if got := stableExecutable(other); got != other {
+		t.Errorf("a different txoko on the PATH must not be used: got %s", got)
+	}
+	lookPath = func(string) (string, error) { return "", os.ErrNotExist }
+	if got := stableExecutable(cellar); got != cellar {
+		t.Errorf("without txoko on the PATH, keep the binary's own path: got %s", got)
+	}
+}
