@@ -342,3 +342,26 @@ func TestSeasonOption(t *testing.T) {
 		t.Error("an empty season should follow the calendar")
 	}
 }
+
+func TestTitleShrinksInsteadOfVanishing(t *testing.T) {
+	m, _ := send(newTest(midnight), key("space")) // paused, autumn, night
+	tests := []struct {
+		inner int
+		want  string
+	}{
+		{80, "txoko · bonsai · autumn · night · paused"},
+		{38, "txoko · autumn · night · paused"},
+		{30, "txoko · night · paused"},
+		{20, "txoko · paused"},
+		{10, "txoko"},
+	}
+	for _, tt := range tests {
+		var got strings.Builder
+		for _, sp := range m.title(true, tt.inner) {
+			got.WriteString(sp.text)
+		}
+		if got.String() != tt.want {
+			t.Errorf("inner %d: title %q, want %q", tt.inner, got.String(), tt.want)
+		}
+	}
+}

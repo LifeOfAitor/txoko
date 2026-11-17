@@ -348,29 +348,42 @@ func (m Model) render() string {
 		Growth: m.growth, Frame: m.frame, Night: night, Season: m.currentSeason(),
 	})
 
-	return frame(inner, m.title(night), renderCanvas(m.canvas, m.theme), m.footer(inner), m.theme)
+	return frame(inner, m.title(night, inner), renderCanvas(m.canvas, m.theme), m.footer(inner), m.theme)
 }
 
-func (m Model) title(night bool) []span {
+// title builds the frame's title, dropping the least important parts until
+// it fits in inner cells: scene name first, then the season, then the sky.
+// What's happening right now (focus, break, paused) is kept the longest.
+func (m Model) title(night bool, inner int) []span {
 	t := m.theme
 	sky := "day"
 	if night {
 		sky = "night"
 	}
-	title := []span{
-		{"txoko", t.Title},
-		{" · " + scenes[m.scene].Name() + " · " + m.currentSeason().String() + " · " + sky, t.Muted},
-	}
+	var status []span
 	switch m.pomo.phase {
 	case phaseFocus:
-		title = append(title, span{" · focus", t.Accent})
+		status = append(status, span{" · focus", t.Accent})
 	case phaseBreak:
-		title = append(title, span{" · break", t.Accent})
+		status = append(status, span{" · break", t.Accent})
 	}
 	if m.paused {
-		title = append(title, span{" · paused", t.Accent})
+		status = append(status, span{" · paused", t.Accent})
 	}
-	return title
+
+	scene, season := scenes[m.scene].Name(), m.currentSeason().String()
+	for _, details := range []string{
+		" · " + scene + " · " + season + " · " + sky,
+		" · " + season + " · " + sky,
+		" · " + sky,
+		"",
+	} {
+		title := append([]span{{"txoko", t.Title}, {details, t.Muted}}, status...)
+		if spansWidth(title)+3 <= inner {
+			return title
+		}
+	}
+	return []span{{"txoko", t.Title}}
 }
 
 func (m Model) footer(inner int) string {
