@@ -314,3 +314,31 @@ func TestProgressBar(t *testing.T) {
 }
 
 func near(a, b float64) bool { return a-b < 1e-9 && b-a < 1e-9 }
+
+func TestSeasonFollowsCalendarAndCycles(t *testing.T) {
+	m, _ := send(newTest(noon), size(70, 18)) // noon is in November
+	title := func() string { return strings.SplitN(m.View().Content, "\n", 2)[0] }
+	if !strings.Contains(title(), "· autumn ·") {
+		t.Fatalf("November should be autumn: %s", title())
+	}
+	for _, want := range []string{"spring", "summer", "autumn", "winter", "autumn"} {
+		m, _ = send(m, key("e"))
+		if !strings.Contains(title(), "· "+want+" ·") {
+			t.Errorf("after e: %s, want %s", title(), want)
+		}
+	}
+	if m.seasonFixed {
+		t.Error("after winter, e should go back to following the calendar")
+	}
+}
+
+func TestSeasonOption(t *testing.T) {
+	plain := PlainTheme()
+	m := New(Options{Season: "winter", Now: noon, Theme: &plain})
+	if m.currentSeason().String() != "winter" {
+		t.Errorf("season = %s, want winter", m.currentSeason())
+	}
+	if m := New(Options{Season: "", Now: noon}); m.seasonFixed {
+		t.Error("an empty season should follow the calendar")
+	}
+}

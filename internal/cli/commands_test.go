@@ -271,3 +271,14 @@ func TestPlural(t *testing.T) {
 		t.Error("plural is wrong")
 	}
 }
+
+func TestSeasonFlag(t *testing.T) {
+	calls := fakeTUI(t, nil)
+	if code, _, stderr := run("--season", "spring"); code != ExitOK || (*calls)[0].Season != "spring" {
+		t.Fatalf("--season spring: exit %d %s", code, stderr)
+	}
+	code, _, stderr := run("--season", "monsoon")
+	if code != ExitUsage || !strings.Contains(stderr, `unknown season "monsoon"`) {
+		t.Errorf("--season monsoon: exit %d %q", code, stderr)
+	}
+}
