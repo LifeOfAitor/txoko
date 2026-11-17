@@ -137,29 +137,31 @@ The tree dresses for the time of year, following the calendar (northern hemisphe
 
 Colors come from your terminal's own palette, so every season matches your theme.
 
-**Nights are soft:** the tree, the pot and the ground dim down, while the moon, the stars and whatever is falling through the air keep their own light. Press <kbd>n</kbd> to switch between day, night and the real time.
+**Nights are soft:** the tree, the pot and the ground dim down, while the sky keeps its own light. The moon is a big pixel-art disc in its **real phase** for today's date, the sky fills with stars of four sizes that twinkle at their own pace, and every now and then a shooting star crosses it. Press <kbd>n</kbd> to switch between day, night and the real time.
 
 ```
-╭─ txoko · bonsai · winter · night · paused ───────────────────╮
-│                                                           ☾  │
-│              : : .           ✦·                       *    ✦ │
-│                * \....                                       │
-│            ~*. *_____\.                               .      │
-│     .        _ _~\*   \... ·        .*     ·                 │
-│           .      ·\.. .__\::  :   *./.  *                    │
-│                    ~\:\.:*:\** :\ =/.  */ .                  │
-│                     ·_\=**  \*.* |\*  ./                     │
-│                         _ \_/|/=__./  |         .            │
-│                            _\|.   \* \:     *    .           │
-│          ·                *  \\.                ·            │
-│              *                || ·                           │
-│                               ||                             │
-│      *                        ||                         *   │
-│                   \__.__.__.__.__.__.__._/                   │
-│                    \____________________/                    │
-├──────────────────────────────────────────────────────────────┤
-│ growth ▰▰▰▰▰▰▰▰▰▰ 100%  manual              +/- grow  q quit │
-╰──────────────────────────────────────────────────────────────╯
+╭─ txoko · bonsai · winter · night · paused ───────────────────────────╮
+│.                     .                       . : |* *:        *      │
+│                                             * * * *        ░░░██▄    │
+│   +  .                           :  .*       *:  / *  :   ░░░░████   │
+│             * *     · *  *.        .:: * *   :_//* *.*    ░░░░████   │
+│             : .*    : :*      ·**/.*/*.  .  . /* *         ░░░██▀   ✧│
+│         * *  ._\ .     \.::.  :.\  \ . **.* /                ·      ·│
+│           * *  .\ **.:  |* .** :  :./: **/_=     *        · ·✧·      │
+│   ·       :    .  _~\   \    *.   |/ */~      .: *    .      ·   ·   │
+│      ·                _\ \.\  :_=.. /|  ../·::*/**. :    ·     ·   · │
+│            ·             _/* \.*:~/_  . /_.*:/ :*       .            │
+│           .                *  *_\| . ·\_____=   : .    ·  ·          │
+│               *                  ~||                                 │
+│                                   ||                    ·            │
+│      *                            ||                                 │
+│                                   ||                            *    │
+│                · *         *      ||                                 │
+│                     \.__.__.__.__.__.__.__.__._/                     │
+│                      \________________________/                      │
+├──────────────────────────────────────────────────────────────────────┤
+│ growth ▰▰▰▰▰▰▰▰▰▰ 100%  manual                      +/- grow  q quit │
+╰──────────────────────────────────────────────────────────────────────╯
 ```
 
 ### Commands
