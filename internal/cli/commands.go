@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -69,9 +70,7 @@ func runHook(args []string, stdout, stderr io.Writer) int {
 		if err != nil {
 			return fail(stderr, err)
 		}
-		if resolved, err := filepath.EvalSymlinks(exe); err == nil {
-			exe = resolved
-		}
+		exe = stableExecutable(exe)
 		// `go run` builds into a temporary folder that disappears afterwards,
 		// which would leave the hook pointing at nothing.
 		if strings.Contains(exe, "go-build") {
@@ -109,6 +108,27 @@ func runHook(args []string, stdout, stderr io.Writer) int {
 		return ExitOK
 	}
 	return usageError(stderr, fmt.Sprintf("unknown hook command %q", args[0]))
+}
+
+// stableExecutable picks the path the git hook should call. Package
+// managers install into versioned folders (Homebrew: Cellar/txoko/0.1.0/…)
+// and link them from a stable place on the PATH (/opt/homebrew/bin/txoko).
+// The versioned folder disappears on upgrade, so when the txoko on the PATH
+// is this very binary, the hook uses that stable path instead.
+func stableExecutable(exe string) string {
+	onPath, err := lookPath("txoko")
+	if err != nil {
+		return exe
+	}
+	if abs, err := filepath.Abs(onPath); err == nil {
+		onPath = abs
+	}
+	a, errA := os.Stat(onPath)
+	b, errB := os.Stat(exe)
+	if errA == nil && errB == nil && os.SameFile(a, b) {
+		return onPath
+	}
+	return exe
 }
 
 // runImport brings in the user's recent commits from existing repositories,

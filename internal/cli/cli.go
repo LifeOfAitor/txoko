@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"slices"
 	"strconv"
 	"strings"
@@ -86,6 +87,7 @@ var (
 	workDir    = os.Getwd
 	now        = time.Now
 	notifySend = notify.Send
+	lookPath   = exec.LookPath
 )
 
 // Run executes txoko with the given arguments (without the program name)
