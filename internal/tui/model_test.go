@@ -71,7 +71,8 @@ func TestViewGolden(t *testing.T) {
 		{"view_narrow", noon, []tea.Msg{size(30, 12)}},
 		{"view_too_small", noon, []tea.Msg{size(20, 6)}},
 		{"view_island", noon, []tea.Msg{size(60, 18), key("s")}},
-		{"view_garden", noon, []tea.Msg{size(60, 18), key("s"), key("s")}},
+		{"view_arch", noon, []tea.Msg{size(60, 18), key("s"), key("s")}},
+		{"view_garden", noon, []tea.Msg{size(60, 18), key("s"), key("s"), key("s")}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

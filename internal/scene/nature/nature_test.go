@@ -1,6 +1,7 @@
 package nature
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/LifeOfAitor/txoko/internal/canvas"
@@ -103,5 +104,71 @@ func TestBoxContains(t *testing.T) {
 	b := box{2, 2, 4, 3}
 	if !b.contains(2, 2, 0) || b.contains(1, 2, 0) || !b.contains(1, 2, 1) {
 		t.Error("box.contains is wrong")
+	}
+}
+
+// flat is a canopy with nothing but ground below row floor and, if set, a
+// spot where the moon should hang.
+type flat struct {
+	floor         int
+	cx, top, maxR int
+}
+
+func (f flat) UnderCanopy(_, y, margin int) bool {
+	return y >= f.floor-margin
+}
+func (f flat) Floor() int { return f.floor }
+
+type framed struct{ flat }
+
+func (f framed) MoonFrame() (int, int, int) { return f.cx, f.top, f.maxR }
+
+func moonCells(c *canvas.Canvas) (minX, maxX, minY int, n int) {
+	minX, minY = c.Width(), c.Height()
+	for y := range c.Height() {
+		for x, cell := range c.Row(y) {
+			if cell.Ink == canvas.InkMoon || cell.Ink == canvas.InkMoonDark {
+				minX, maxX, minY, n = min(minX, x), max(maxX, x), min(minY, y), n+1
+			}
+		}
+	}
+	return minX, maxX, minY, n
+}
+
+// TestMoonFramer: a scene can hang the moon where it likes; with no room
+// it goes back to the top right corner.
+func TestMoonFramer(t *testing.T) {
+	c := canvas.New(60, 20)
+	DrawSky(c, 1, framed{flat{floor: 18, cx: 20, top: 6, maxR: 3}}, 0.5, 0)
+	if minX, maxX, minY, n := moonCells(c); n == 0 || minX < 17 || maxX > 22 || minY != 6 {
+		t.Errorf("framed moon at x %d..%d, y %d (%d cells)", minX, maxX, minY, n)
+	}
+
+	c = canvas.New(60, 20)
+	DrawSky(c, 1, framed{flat{floor: 18, maxR: 1}}, 0.5, 0)
+	if minX, _, _, n := moonCells(c); n == 0 || minX < 40 {
+		t.Errorf("with no room the moon belongs in the corner, found it from x %d", minX)
+	}
+}
+
+// TestCloudsPassBehind: clouds drift across their rows, behind whatever
+// is already drawn.
+func TestCloudsPassBehind(t *testing.T) {
+	seen := 0
+	for f := 0; f < 600; f += 37 {
+		c := canvas.New(60, 20)
+		for x := 30; x < 60; x++ {
+			c.Set(x, 5, '#', canvas.InkRock) // something in the way
+		}
+		DrawClouds(c, 1, []int{1, 5, 19}, f)
+		for x := 30; x < 60; x++ {
+			if c.At(x, 5).Rune != '#' {
+				t.Fatalf("frame %d: a cloud covered (%d,5)", f, x)
+			}
+		}
+		seen += strings.Count(c.String(), "~")
+	}
+	if seen == 0 {
+		t.Error("clouds should drift by")
 	}
 }

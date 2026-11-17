@@ -77,7 +77,7 @@ By default txoko is a visual toy: you decide how grown the scene is. All the key
 | Key | Action |
 |---|---|
 | <kbd>+</kbd> / <kbd>-</kbd> | grow or shrink the tree |
-| <kbd>s</kbd> | switch scene (bonsai, island, garden) |
+| <kbd>s</kbd> | switch scene (bonsai, island, arch, garden) |
 | <kbd>e</kbd> | cycle the season: spring → summer → autumn → winter → today's |
 | <kbd>n</kbd> | switch between day and night (until you press it, the sky follows the clock) |
 | <kbd>r</kbd> | plant a new tree, under a new moon |

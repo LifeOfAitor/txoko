@@ -2,6 +2,7 @@ package tui
 
 import (
 	"github.com/LifeOfAitor/txoko/internal/scene"
+	"github.com/LifeOfAitor/txoko/internal/scene/arch"
 	"github.com/LifeOfAitor/txoko/internal/scene/bonsai"
 	"github.com/LifeOfAitor/txoko/internal/scene/garden"
 	"github.com/LifeOfAitor/txoko/internal/scene/island"
@@ -11,6 +12,7 @@ import (
 var scenes = []scene.Scene{
 	bonsai.Scene{},
 	island.Scene{},
+	arch.Scene{},
 	garden.Scene{},
 }
 
