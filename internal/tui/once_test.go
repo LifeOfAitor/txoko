@@ -92,3 +92,12 @@ func TestOnceNoTrailingSpaces(t *testing.T) {
 		}
 	}
 }
+
+func TestOnceSky(t *testing.T) {
+	if !strings.Contains(once(t, OnceOptions{Growth: 1, Sky: "night"}), "· night") {
+		t.Error("--sky night should make the splash a night scene at noon")
+	}
+	if !strings.Contains(once(t, OnceOptions{Growth: 1, Sky: "day", Now: midnight}), "· day") {
+		t.Error("--sky day should make the splash a day scene at midnight")
+	}
+}

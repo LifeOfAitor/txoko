@@ -77,3 +77,16 @@ func TestSceneSizeString(t *testing.T) {
 	}
 	_ = time.Now
 }
+
+func TestSkyFlag(t *testing.T) {
+	calls := fakeTUI(t, nil)
+	if code, _, _ := run("--sky", "night"); code != ExitOK || (*calls)[0].Sky != "night" {
+		t.Errorf("--sky night: exit %d", code)
+	}
+	if _, stdout, _ := run("--once", "--sky", "night"); !strings.Contains(stdout, "· night") {
+		t.Errorf("--once --sky night:\n%s", stdout)
+	}
+	if code, _, stderr := run("--sky", "dusk"); code != ExitUsage || !strings.Contains(stderr, "day or night") {
+		t.Errorf("--sky dusk: exit %d %q", code, stderr)
+	}
+}

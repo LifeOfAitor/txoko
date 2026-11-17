@@ -58,6 +58,7 @@ Flags:
       --scene S    scene to show: %s (default %s)
       --seed N     scene layout; the default is unique to this machine
       --season S   spring, summer, autumn or winter (default: today's)
+      --sky S      day or night (default: follows the clock)
       --growth N   starting growth, 0 to 1 (default 0.4)
       --work       grow from your recorded activity (commits and focus)
       --pomodoro M focus session of M minutes: the tree blooms as it ends
@@ -133,6 +134,7 @@ func runScene(args []string, stdout, stderr io.Writer) int {
 	fs.Uint64Var(&opts.Seed, "seed", cfg.Seed, "")
 	fs.StringVar(&opts.Scene, "scene", cfg.Scene, "")
 	fs.StringVar(&opts.Season, "season", cfg.Season, "")
+	fs.StringVar(&opts.Sky, "sky", "", "")
 	focus := minutes{lo: 1, hi: 240}
 	brk := minutes{lo: 0, hi: 120, n: cfg.Pomodoro.Break}
 	fs.Var(&focus, "pomodoro", "")
@@ -173,6 +175,9 @@ func runScene(args []string, stdout, stderr io.Writer) int {
 	}
 	if once && !flagSet(fs, "work") && !flagSet(fs, "growth") {
 		work = cfg.Once.Work
+	}
+	if opts.Sky != "" && opts.Sky != "day" && opts.Sky != "night" {
+		return usageError(stderr, fmt.Sprintf("--sky takes day or night, got %q", opts.Sky))
 	}
 	if work && flagSet(fs, "growth") {
 		return usageError(stderr, "--growth sets the scene by hand, so it can't be combined with --work")
@@ -219,7 +224,7 @@ func runScene(args []string, stdout, stderr io.Writer) int {
 // tree is shown fully grown: a greeting should look its best.
 func runOnce(opts tui.Options, work, growthSet bool, size sceneSize, stdout, stderr io.Writer) int {
 	o := tui.OnceOptions{
-		Scene: opts.Scene, Season: opts.Season, Seed: opts.Seed,
+		Scene: opts.Scene, Season: opts.Season, Sky: opts.Sky, Seed: opts.Seed,
 		Growth: 1, Width: size.w, Height: size.h,
 		Color: colorOutput(stdout), Now: now,
 	}

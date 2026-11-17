@@ -42,6 +42,7 @@ const (
 type Options struct {
 	Scene  string  // scene name; "" picks the default (see SceneNames)
 	Season string  // "spring", "summer", "autumn" or "winter"; "" follows the calendar
+	Sky    string  // "day" or "night"; "" follows the clock
 	Seed   uint64  // scene layout; 0 derives one from the hostname
 	Growth float64 // manual mode: starting progress, 0..1
 	FPS    int     // animation frames per second
@@ -145,6 +146,12 @@ func New(opts Options) Model {
 		m.theme = *opts.Theme
 	}
 	m.scene, _ = sceneIndex(opts.Scene) // unknown names fall back to the default
+	switch opts.Sky {
+	case "day":
+		m.sky = skyDay
+	case "night":
+		m.sky = skyNight
+	}
 	if s, ok := scene.ParseSeason(opts.Season); ok {
 		m.season, m.seasonFixed = s, true
 	}

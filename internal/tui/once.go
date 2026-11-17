@@ -23,6 +23,7 @@ const (
 type OnceOptions struct {
 	Scene  string
 	Season string // "" follows the calendar
+	Sky    string // "day" or "night"; "" follows the clock
 	Seed   uint64 // 0 derives one from the hostname
 	Growth float64
 	Width  int // scene size; 0 uses OnceWidth and OnceHeight
@@ -59,6 +60,12 @@ func Once(w io.Writer, o OnceOptions) error {
 		season = s
 	}
 	night := now.Hour() < 7 || now.Hour() >= 20
+	switch o.Sky {
+	case "day":
+		night = false
+	case "night":
+		night = true
+	}
 	idx, _ := sceneIndex(o.Scene)
 
 	moon := randomMoon()
