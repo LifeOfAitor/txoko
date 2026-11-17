@@ -5,6 +5,7 @@ import (
 
 	"github.com/LifeOfAitor/txoko/internal/canvas"
 	"github.com/LifeOfAitor/txoko/internal/scene"
+	"github.com/LifeOfAitor/txoko/internal/scene/nature"
 	"github.com/LifeOfAitor/txoko/internal/testutil/golden"
 )
 
@@ -44,8 +45,8 @@ func treeOnly(season scene.Season, g float64) *canvas.Canvas {
 func TestSeasonsDressTheTree(t *testing.T) {
 	leaves := func(season scene.Season) int {
 		n := 0
-		for _, m := range grown(testSeed, 60, 20).marks {
-			if _, _, onTree := dressLeaf(m, season); m.leaf && onTree {
+		for _, m := range nature.Grow(testSeed, 60, 20).Marks {
+			if _, _, onTree := nature.DressLeaf(m, season); m.Leaf && onTree {
 				n++
 			}
 		}
@@ -153,24 +154,5 @@ func TestSeasonsAreSafeAtAnySize(_ *testing.T) {
 				}
 			}
 		}
-	}
-}
-
-func TestNoiseIsStableAndUniform(t *testing.T) {
-	if a, b := noise(3, 4, 1), noise(3, 4, 1); a != b {
-		t.Fatal("noise must be deterministic")
-	}
-	below := 0
-	for i := range 10000 {
-		v := noise(i%100, i/100, 5)
-		if v < 0 || v >= 1 {
-			t.Fatalf("noise out of range: %v", v)
-		}
-		if v < 0.5 {
-			below++
-		}
-	}
-	if below < 4700 || below > 5300 {
-		t.Errorf("noise looks biased: %d of 10000 below 0.5", below)
 	}
 }
