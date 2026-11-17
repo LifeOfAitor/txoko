@@ -141,7 +141,7 @@ func (m Model) pomodoroFooter(inner int) string {
 			{empty, t.Muted},
 			{" " + clock(p.left), t.Accent},
 		}
-		hints = append(append(key("space", "pause"), key("s", "scene")...), quit...)
+		hints = append(append(append(key("space", "pause"), key("s", "scene")...), key("e", "season")...), quit...)
 	case p.phase == phaseBreak:
 		left = []span{{"break ", t.Muted}, {clock(p.left), t.Accent}, {"  stretch, breathe", t.Muted}}
 		hints = append(key("space", "pause"), quit...)

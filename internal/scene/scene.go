@@ -16,6 +16,8 @@ type State struct {
 	Frame int
 	// Night switches the scene to its night look.
 	Night bool
+	// Season dresses the scene for the time of year.
+	Season Season
 }
 
 // Scene is a drawable theme such as the bonsai or the garden.

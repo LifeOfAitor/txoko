@@ -19,6 +19,7 @@ import (
 
 	"github.com/LifeOfAitor/txoko/internal/notify"
 	"github.com/LifeOfAitor/txoko/internal/progress"
+	"github.com/LifeOfAitor/txoko/internal/scene"
 	"github.com/LifeOfAitor/txoko/internal/store"
 	"github.com/LifeOfAitor/txoko/internal/tui"
 	"github.com/LifeOfAitor/txoko/internal/version"
@@ -50,6 +51,7 @@ Commands (for --work):
 Flags:
       --scene S    scene to show: %s (default %s)
       --seed N     scene layout; the default is unique to this machine
+      --season S   spring, summer, autumn or winter (default: today's)
       --growth N   starting growth, 0 to 1 (default 0.4)
       --work       grow from your recorded activity (commits and focus)
       --pomodoro M focus session of M minutes: the tree blooms as it ends
@@ -58,7 +60,7 @@ Flags:
   -v, --version    print version information
 
 Keys:
-  +/-  grow or shrink (not with --work)   s  next scene
+  +/-  grow or shrink (not with --work)   s  next scene   e  season
   n  day / night / auto                   r  new layout
   space  pause                            q  quit
 `
@@ -111,6 +113,7 @@ func runScene(args []string, stdout, stderr io.Writer) int {
 	fs.Float64Var(&opts.Growth, "growth", tui.DefaultGrowth, "")
 	fs.Uint64Var(&opts.Seed, "seed", 0, "")
 	fs.StringVar(&opts.Scene, "scene", "", "")
+	fs.StringVar(&opts.Season, "season", "", "")
 	focus := minutes{lo: 1, hi: 240}
 	brk := minutes{lo: 0, hi: 120}
 	fs.Var(&focus, "pomodoro", "")
@@ -134,6 +137,9 @@ func runScene(args []string, stdout, stderr io.Writer) int {
 			opts.Scene, strings.Join(tui.SceneNames(), ", ")))
 	}
 
+	if _, ok := scene.ParseSeason(opts.Season); opts.Season != "" && !ok {
+		return usageError(stderr, fmt.Sprintf("unknown season %q (use spring, summer, autumn or winter)", opts.Season))
+	}
 	if work && flagSet(fs, "growth") {
 		return usageError(stderr, "--growth sets the scene by hand, so it can't be combined with --work")
 	}

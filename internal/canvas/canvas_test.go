@@ -100,3 +100,21 @@ func TestString(t *testing.T) {
 		t.Errorf("String() = %q, want %q", got, want)
 	}
 }
+
+func TestShade(t *testing.T) {
+	c := New(3, 1)
+	c.Set(0, 0, 'a', InkLeaf)
+	c.Shade(0, 0)
+	c.Shade(1, 0)  // blank: nothing to shade
+	c.Shade(-1, 0) // out of bounds: ignored
+	if !c.At(0, 0).Shadow {
+		t.Error("shaded cell should be in shadow")
+	}
+	if !c.IsEmpty(1, 0) {
+		t.Error("shading a blank cell must keep it blank")
+	}
+	c.Set(0, 0, 'b', InkLeaf)
+	if c.At(0, 0).Shadow {
+		t.Error("Set should replace the whole cell, shadow included")
+	}
+}

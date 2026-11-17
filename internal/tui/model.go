@@ -40,6 +40,7 @@ const (
 // Options configures a new Model. Zero values pick sensible defaults.
 type Options struct {
 	Scene  string  // scene name; "" picks the default (see SceneNames)
+	Season string  // "spring", "summer", "autumn" or "winter"; "" follows the calendar
 	Seed   uint64  // scene layout; 0 derives one from the hostname
 	Growth float64 // manual mode: starting progress, 0..1
 	FPS    int     // animation frames per second
@@ -78,8 +79,12 @@ type Model struct {
 	frame  int
 	fps    int
 	sky    skyMode
-	paused bool
-	tickID int // identifies the live tick loop; see tickMsg
+	// season is fixed when seasonFixed is set; otherwise it follows the
+	// calendar through now().
+	season      scene.Season
+	seasonFixed bool
+	paused      bool
+	tickID      int // identifies the live tick loop; see tickMsg
 
 	source  func() (progress.Summary, error)
 	refresh time.Duration
@@ -133,6 +138,9 @@ func New(opts Options) Model {
 		m.theme = *opts.Theme
 	}
 	m.scene, _ = sceneIndex(opts.Scene) // unknown names fall back to the default
+	if s, ok := scene.ParseSeason(opts.Season); ok {
+		m.season, m.seasonFixed = s, true
+	}
 	if opts.Focus > 0 {
 		m.pomo = pomodoro{phase: phaseFocus, focus: opts.Focus, brk: opts.Break, left: opts.Focus, last: m.now()}
 		m.growth = 0
@@ -259,6 +267,8 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		if !m.live() {
 			m.growth = clamp01(m.growth - growthStep)
 		}
+	case "e":
+		m = m.nextSeason()
 	case "n":
 		m.sky = (m.sky + 1) % 3
 	case "s":
@@ -274,6 +284,33 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 	}
 	return m, nil
+}
+
+// currentSeason is the fixed season, or the calendar's.
+func (m Model) currentSeason() scene.Season {
+	if m.seasonFixed {
+		return m.season
+	}
+	return scene.SeasonOf(m.now())
+}
+
+// nextSeason cycles calendar → spring → summer → autumn → winter → calendar.
+func (m Model) nextSeason() Model {
+	if !m.seasonFixed {
+		m.season, m.seasonFixed = scene.Seasons[0], true
+		return m
+	}
+	for i, s := range scene.Seasons {
+		if s == m.season {
+			if i == len(scene.Seasons)-1 {
+				m.seasonFixed = false
+			} else {
+				m.season = scene.Seasons[i+1]
+			}
+			break
+		}
+	}
+	return m
 }
 
 func (m Model) night() bool {
@@ -307,7 +344,9 @@ func (m Model) render() string {
 
 	inner := m.canvas.Width()
 	night := m.night()
-	scenes[m.scene].Draw(m.canvas, m.seed, scene.State{Growth: m.growth, Frame: m.frame, Night: night})
+	scenes[m.scene].Draw(m.canvas, m.seed, scene.State{
+		Growth: m.growth, Frame: m.frame, Night: night, Season: m.currentSeason(),
+	})
 
 	return frame(inner, m.title(night), renderCanvas(m.canvas, m.theme), m.footer(inner), m.theme)
 }
@@ -320,7 +359,7 @@ func (m Model) title(night bool) []span {
 	}
 	title := []span{
 		{"txoko", t.Title},
-		{" · " + scenes[m.scene].Name() + " · " + sky, t.Muted},
+		{" · " + scenes[m.scene].Name() + " · " + m.currentSeason().String() + " · " + sky, t.Muted},
 	}
 	switch m.pomo.phase {
 	case phaseFocus:
@@ -354,7 +393,8 @@ func (m Model) footer(inner int) string {
 		hints = append(hints, key("+/-", "grow")...)
 	}
 	hints = append(hints, key("s", "scene")...)
-	hints = append(hints, key("n", "sky")...)
+	hints = append(hints, key("e", "season")...)
+	hints = append(hints, key("n", "night")...)
 	hints = append(hints, key("r", "reseed")...)
 	hints = append(hints, key("space", "pause")...)
 	hints = append(hints, span{"q", t.Accent}, span{" quit", t.Muted})

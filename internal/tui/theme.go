@@ -30,7 +30,7 @@ func DefaultTheme() Theme {
 	fg := func(c color.Color) lipgloss.Style { return lipgloss.NewStyle().Foreground(c) }
 
 	var t Theme
-	t.Ink[canvas.InkSoil] = fg(lipgloss.Yellow).Faint(true)
+	t.Ink[canvas.InkSoil] = fg(lipgloss.Yellow)
 	t.Ink[canvas.InkGrass] = fg(lipgloss.Green)
 	t.Ink[canvas.InkStem] = fg(lipgloss.Green)
 	t.Ink[canvas.InkLeaf] = fg(lipgloss.BrightGreen).Bold(true)
@@ -50,6 +50,12 @@ func DefaultTheme() Theme {
 	t.Ink[canvas.InkLeafDark] = fg(lipgloss.Green)
 	t.Ink[canvas.InkLeafDim] = fg(lipgloss.Green).Faint(true)
 	t.Ink[canvas.InkPot] = fg(lipgloss.White)
+	t.Ink[canvas.InkBlossom] = fg(lipgloss.BrightMagenta).Bold(true)
+	t.Ink[canvas.InkBlossomLight] = fg(lipgloss.White)
+	t.Ink[canvas.InkAutumnRed] = fg(lipgloss.Red)
+	t.Ink[canvas.InkAutumnOrange] = fg(lipgloss.BrightRed).Bold(true)
+	t.Ink[canvas.InkAutumnGold] = fg(lipgloss.Yellow).Bold(true)
+	t.Ink[canvas.InkSnow] = fg(lipgloss.BrightWhite).Bold(true)
 
 	t.Border = fg(lipgloss.BrightBlack)
 	t.Title = fg(lipgloss.Green).Bold(true)
@@ -71,14 +77,18 @@ func renderCanvas(c *canvas.Canvas, t Theme) []string {
 		line.Reset()
 		row := c.Row(y)
 		for i := 0; i < len(row); {
-			ink := row[i].Ink
+			ink, shadow := row[i].Ink, row[i].Shadow
 			run.Reset()
-			for ; i < len(row) && row[i].Ink == ink; i++ {
+			for ; i < len(row) && row[i].Ink == ink && row[i].Shadow == shadow; i++ {
 				run.WriteRune(row[i].Rune)
 			}
-			if ink == canvas.InkNone {
+			switch {
+			case ink == canvas.InkNone:
 				line.WriteString(run.String())
-			} else {
+			case shadow:
+				// Out of the light: same color, dimmed.
+				line.WriteString(t.Ink[ink].Bold(false).Faint(true).Render(run.String()))
+			default:
 				line.WriteString(t.Ink[ink].Render(run.String()))
 			}
 		}
