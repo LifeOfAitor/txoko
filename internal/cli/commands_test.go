@@ -51,7 +51,7 @@ func git(t *testing.T, dir string, args ...string) {
 	}
 }
 
-func TestSceneUsesRealActivityByDefault(t *testing.T) {
+func TestWorkModeUsesRealActivity(t *testing.T) {
 	freshDB(t)
 	var (
 		got    progress.Summary
@@ -61,7 +61,7 @@ func TestSceneUsesRealActivityByDefault(t *testing.T) {
 	orig := startTUI
 	startTUI = func(o tui.Options) error {
 		if o.Source == nil {
-			t.Fatal("the scene should be fed by the activity store")
+			t.Fatal("--work should feed the scene from the activity store")
 		}
 		called = true
 		got, err = o.Source() // read while the UI is "open", like the real one
@@ -69,7 +69,7 @@ func TestSceneUsesRealActivityByDefault(t *testing.T) {
 	}
 	t.Cleanup(func() { startTUI = orig })
 
-	if code, _, stderr := run(); code != ExitOK || !called {
+	if code, _, stderr := run("--work"); code != ExitOK || !called {
 		t.Fatalf("exit %d: %s", code, stderr)
 	}
 	if err != nil || got != (progress.Summary{}) {
@@ -77,13 +77,21 @@ func TestSceneUsesRealActivityByDefault(t *testing.T) {
 	}
 }
 
-func TestDemoModes(t *testing.T) {
-	for _, args := range [][]string{{"--demo"}, {"--growth", "0.3"}} {
+func TestManualIsTheDefault(t *testing.T) {
+	for _, args := range [][]string{nil, {"--growth", "0.3"}, {"--scene", "garden"}} {
 		calls := fakeTUI(t, nil)
 		run(args...)
 		if (*calls)[0].Source != nil {
-			t.Errorf("%v should run the demo without a data source", args)
+			t.Errorf("%v should run in manual mode, without a data source", args)
 		}
+	}
+}
+
+func TestWorkRejectsGrowth(t *testing.T) {
+	fakeTUI(t, nil)
+	code, _, stderr := run("--work", "--growth", "0.5")
+	if code != ExitUsage || !strings.Contains(stderr, "can't be combined with --work") {
+		t.Errorf("--work --growth: exit %d %q", code, stderr)
 	}
 }
 
@@ -94,7 +102,7 @@ func TestSceneFailsWhenStoreCannotOpen(t *testing.T) {
 	}
 	t.Setenv("TXOKO_DB", filepath.Join(blocker, "txoko.db"))
 	fakeTUI(t, nil)
-	if code, _, _ := run(); code != ExitError {
+	if code, _, _ := run("--work"); code != ExitError {
 		t.Errorf("exit = %d, want %d", code, ExitError)
 	}
 }

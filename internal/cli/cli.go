@@ -32,10 +32,11 @@ const (
 const usageTemplate = `txoko — a cozy corner for your terminal that grows as you work.
 
 Usage:
-  txoko [flags]            open your scene, grown by your real activity
+  txoko [flags]            open your scene and grow it by hand with +/-
+  txoko --work [flags]     let your real activity grow it instead
   txoko <command>
 
-Commands:
+Commands (for --work):
   hook install             record every commit (sets a global git hook)
   hook uninstall           remove the hook again
   hook status              show whether the hook is installed
@@ -46,14 +47,15 @@ Commands:
 Flags:
       --scene S    scene to show: %s (default %s)
       --seed N     scene layout; the default is unique to this machine
-      --demo       grow the scene by hand instead of from your activity
-      --growth N   demo starting growth, 0 to 1 (implies --demo)
+      --growth N   starting growth, 0 to 1 (default 0.4)
+      --work       grow from your recorded activity (commits)
   -h, --help       show this help
   -v, --version    print version information
 
 Keys:
-  s  next scene   n  day / night / auto   r  new layout
-  space  pause    q  quit                 +/-  grow (demo)
+  +/-  grow or shrink (not with --work)   s  next scene
+  n  day / night / auto                   r  new layout
+  space  pause                            q  quit
 `
 
 // usage is the help text with the scene names filled in.
@@ -94,12 +96,12 @@ func Run(args []string, stdout, stderr io.Writer) int {
 func runScene(args []string, stdout, stderr io.Writer) int {
 	fs := newFlagSet("txoko")
 	var (
-		showVersion, demo bool
+		showVersion, work bool
 		opts              = tui.Options{Growth: tui.DefaultGrowth}
 	)
 	fs.BoolVar(&showVersion, "version", false, "")
 	fs.BoolVar(&showVersion, "v", false, "")
-	fs.BoolVar(&demo, "demo", false, "")
+	fs.BoolVar(&work, "work", false, "")
 	fs.Float64Var(&opts.Growth, "growth", tui.DefaultGrowth, "")
 	fs.Uint64Var(&opts.Seed, "seed", 0, "")
 	fs.StringVar(&opts.Scene, "scene", "", "")
@@ -122,7 +124,13 @@ func runScene(args []string, stdout, stderr io.Writer) int {
 			opts.Scene, strings.Join(tui.SceneNames(), ", ")))
 	}
 
-	if !demo && !flagSet(fs, "growth") {
+	if work && flagSet(fs, "growth") {
+		return usageError(stderr, "--growth sets the scene by hand, so it can't be combined with --work")
+	}
+
+	// By default txoko is a visual toy you shape yourself; --work hands the
+	// growth over to your recorded activity.
+	if work {
 		st, err := openStore()
 		if err != nil {
 			return fail(stderr, err)

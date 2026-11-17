@@ -41,11 +41,11 @@ const (
 type Options struct {
 	Scene  string  // scene name; "" picks the default (see SceneNames)
 	Seed   uint64  // scene layout; 0 derives one from the hostname
-	Growth float64 // demo mode: starting progress, 0..1
+	Growth float64 // manual mode: starting progress, 0..1
 	FPS    int     // animation frames per second
 
-	// Source reads the real activity summary. When nil the UI runs in demo
-	// mode, where +/- set the growth by hand.
+	// Source reads the real activity summary (txoko --work). When nil the
+	// UI runs in manual mode, where +/- set the growth by hand.
 	Source  func() (progress.Summary, error)
 	Refresh time.Duration    // how often Source is read again
 	Now     func() time.Time // clock; injected so tests control day and night
@@ -329,7 +329,7 @@ func (m Model) status() []span {
 	t := m.theme
 	switch {
 	case !m.live():
-		return []span{{"  demo", t.Muted}}
+		return []span{{"  manual", t.Muted}}
 	case m.loadErr != nil:
 		return []span{{"  can't read activity", t.Accent}}
 	case !m.loaded:

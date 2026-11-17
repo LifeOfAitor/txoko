@@ -63,9 +63,15 @@ git clone https://github.com/LifeOfAitor/txoko.git
 cd txoko
 make build
 
-./bin/txoko hook install          # every commit from now on grows your scene
+./bin/txoko                       # open your scene and shape it with + and -
+```
+
+txoko is a visual toy first: by default you decide how grown the scene is. If you'd rather have it **grow with your work**, let it follow your commits:
+
+```sh
+./bin/txoko hook install          # every commit from now on is recorded
 ./bin/txoko import ~/code/*       # optional: bring in your last 30 days of commits
-./bin/txoko                       # open your scene
+./bin/txoko --work                # the scene now grows with your activity
 ```
 
 Make a commit in any repository and watch the tree grow a little within a few seconds.
@@ -93,33 +99,34 @@ Make a commit in any repository and watch the tree grow a little within a few se
 │                      \_____,:_._,_,_:~..~,_,__:_/                      │
 │                       \________________________/                       │
 ├────────────────────────────────────────────────────────────────────────┤
-│ growth ▰▰▰▰▰▰▰▰▰▰ 100%  demo                          +/- grow  q quit │
+│ growth ▰▰▰▰▰▰▰▰▰▰ 100%  manual                        +/- grow  q quit │
 ╰────────────────────────────────────────────────────────────────────────╯
 ```
 
 | Key | Action |
 |---|---|
-| <kbd>+</kbd> / <kbd>-</kbd> | grow or shrink the scene |
+| <kbd>+</kbd> / <kbd>-</kbd> | grow or shrink the scene (not with `--work`) |
 | <kbd>s</kbd> | switch scene (bonsai, garden) |
 | <kbd>n</kbd> | cycle the sky: day → night → follow the clock |
 | <kbd>r</kbd> | plant a new layout |
 | <kbd>space</kbd> | pause the animation |
 | <kbd>q</kbd> | quit |
 
-Flags: `--scene bonsai|garden` picks the scene, `--seed N` picks a layout (by default every machine gets its own tree) and `--demo` lets you grow it by hand with <kbd>+</kbd>/<kbd>-</kbd>. The capture above is `--seed 3` at night.
+Flags: `--scene bonsai|garden` picks the scene, `--seed N` picks a layout (by default every machine gets its own tree), `--growth 0..1` sets the starting growth and `--work` grows it from your activity instead. The capture above is `--seed 3` at night.
 
 ### Commands
 
 | Command | What it does |
 |---|---|
-| `txoko` | open your scene, grown by your real activity |
+| `txoko` | open your scene and grow it by hand |
+| `txoko --work` | open your scene, grown by your real activity |
 | `txoko hook install` | record every commit through a global git hook |
 | `txoko hook uninstall` | remove the hook (your history is kept) |
 | `txoko hook status` | check whether the hook is installed |
 | `txoko import [dir...]` | import your commits from the last 30 days (`--days N`) |
 | `txoko stats` | print growth, today's commits and your streak |
 
-### How your activity becomes growth
+### How your activity becomes growth (`--work`)
 
 - **Every commit adds a point.** Points fade with a two-week half-life, so the tree reflects your recent rhythm: keep going and it stays lush, take a break and it slowly thins out — it never dies.
 - **Growth eases in:** `growth = 1 − e^(−points / 25)`. Your first commits make a big difference; about three a day keeps the tree near 90%.
