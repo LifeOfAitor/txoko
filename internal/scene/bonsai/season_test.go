@@ -56,8 +56,8 @@ func TestSeasonsDressTheTree(t *testing.T) {
 	if spring[canvas.InkBlossom] == 0 || spring[canvas.InkBlossomLight] == 0 {
 		t.Error("spring should be in blossom")
 	}
-	if spring[canvas.InkBlossom] < spring[canvas.InkLeaf] {
-		t.Error("spring should be mostly blossom, not green")
+	if spring[canvas.InkBlossom] <= spring[canvas.InkBlossomLight] {
+		t.Error("spring should be mostly the deeper pink")
 	}
 
 	autumn := inks(treeOnly(scene.Autumn, 1))
@@ -66,16 +66,20 @@ func TestSeasonsDressTheTree(t *testing.T) {
 			t.Errorf("autumn is missing ink %d", ink)
 		}
 	}
-	if autumn[canvas.InkLeaf] != 0 {
-		t.Error("no bright summer green in autumn")
+
+	for name, season := range map[string]scene.Season{"spring": scene.Spring, "autumn": scene.Autumn, "winter": scene.Winter} {
+		n := inks(treeOnly(season, 1))
+		if green := n[canvas.InkLeaf] + n[canvas.InkLeafDark] + n[canvas.InkLeafDim]; green != 0 {
+			t.Errorf("%s should have no green leaves, found %d", name, green)
+		}
 	}
 
 	winter := inks(treeOnly(scene.Winter, 1))
 	if winter[canvas.InkSnow] == 0 {
 		t.Error("winter should have snow")
 	}
-	if leaves(scene.Winter) >= leaves(scene.Summer)/2 {
-		t.Errorf("winter should be mostly bare: %d leaves vs %d in summer", leaves(scene.Winter), leaves(scene.Summer))
+	if leaves(scene.Winter) >= leaves(scene.Summer)*3/4 {
+		t.Errorf("winter should be partly bare: %d snowy tufts vs %d leaves in summer", leaves(scene.Winter), leaves(scene.Summer))
 	}
 	if leaves(scene.Autumn) >= leaves(scene.Summer) {
 		t.Error("some leaves should have fallen in autumn")

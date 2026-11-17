@@ -13,44 +13,37 @@ func dressLeaf(m mark, season scene.Season) (rune, canvas.Ink, bool) {
 	v := noise(m.x, m.y, uint64(season)+1)
 	switch season {
 	case scene.Spring:
-		// Mostly blossom, a few fresh green leaves, and here and there a
-		// whole flower.
+		// Full cherry blossom: two pinks and, here and there, a whole flower.
 		r := m.r
-		if noise(m.x, m.y, 77) < 0.08 {
+		if noise(m.x, m.y, 77) < 0.1 {
 			r = '✿'
 		}
-		switch {
-		case v < 0.45:
+		if v < 0.65 {
 			return r, canvas.InkBlossom, true
-		case v < 0.75:
-			return r, canvas.InkBlossomLight, true
-		case v < 0.9:
-			return m.r, canvas.InkLeaf, true
 		}
-		return m.r, canvas.InkLeafDark, true
+		return r, canvas.InkBlossomLight, true
 
 	case scene.Autumn:
 		switch {
 		case v < 0.1:
 			return 0, 0, false // already fallen
-		case v < 0.35:
+		case v < 0.4:
 			return m.r, canvas.InkAutumnRed, true
-		case v < 0.6:
+		case v < 0.7:
 			return m.r, canvas.InkAutumnOrange, true
-		case v < 0.85:
-			return m.r, canvas.InkAutumnGold, true
 		}
-		return m.r, canvas.InkLeafDark, true // a few hold on to their green
+		return m.r, canvas.InkAutumnGold, true
 
 	case scene.Winter:
-		// Bare branches with a few evergreen tufts dusted with snow.
-		switch {
-		case v < 0.7:
+		// Bare in places, the rest of the crown heavy with snow.
+		if v < 0.4 {
 			return 0, 0, false
-		case v < 0.88:
-			return '*', canvas.InkSnow, true
 		}
-		return m.r, canvas.InkLeafDim, true
+		snow := []rune("**.:*")[int(noise(m.x, m.y, 91)*5)]
+		if v < 0.75 {
+			return snow, canvas.InkSnow, true
+		}
+		return snow, canvas.InkBlossomLight, true
 	}
 	return m.r, m.ink, true
 }
@@ -68,9 +61,9 @@ type weather struct {
 func weatherFor(season scene.Season, w, h int) weather {
 	switch season {
 	case scene.Spring:
-		return weather{4, 0.3, 120, []rune{'.', ',', '*'}, []canvas.Ink{canvas.InkBlossom, canvas.InkBlossomLight}, true}
+		return weather{9, 0.3, 110, []rune{'.', ',', '*'}, []canvas.Ink{canvas.InkBlossom, canvas.InkBlossomLight}, true}
 	case scene.Autumn:
-		return weather{5, 0.3, 80, []rune{',', '`'}, []canvas.Ink{canvas.InkAutumnRed, canvas.InkAutumnOrange, canvas.InkAutumnGold}, true}
+		return weather{9, 0.3, 80, []rune{',', '`'}, []canvas.Ink{canvas.InkAutumnRed, canvas.InkAutumnOrange, canvas.InkAutumnGold}, true}
 	case scene.Winter:
 		return weather{max(3, w*h/45), 0, 0, []rune{'·', '*', '.'}, []canvas.Ink{canvas.InkSnow, canvas.InkStar}, false}
 	}
@@ -145,7 +138,7 @@ func dressGround(c *canvas.Canvas, t tree, visible []mark, season scene.Season) 
 		// Snow settles on top of some branches, but never where the tree
 		// will grow later: growing must only ever add to the picture.
 		for _, m := range visible {
-			if !m.leaf && noise(m.x, m.y, 31) < 0.4 && !t.willGrow(m.x, m.y-1) {
+			if !m.leaf && noise(m.x, m.y, 31) < 0.75 && !t.willGrow(m.x, m.y-1) {
 				c.SetIfEmpty(m.x, m.y-1, '.', canvas.InkSnow)
 			}
 		}
