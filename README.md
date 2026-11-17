@@ -110,7 +110,9 @@ txoko --once --work
 tmux split-window -h -l 32 'txoko --work'
 ```
 
-**Your status bar or prompt**, refreshed every few seconds:
+<img src="docs/images/tmux.png" alt="tmux with git log on the left, an autumn bonsai in a narrow pane on the right, and 🍂 67% · 14d in the status bar" width="820">
+
+**Your status bar or prompt**, refreshed every few seconds (bottom right in the screenshot above):
 
 ```sh
 # ~/.tmux.conf

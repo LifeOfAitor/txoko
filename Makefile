@@ -42,7 +42,8 @@ demo: build ## Record the README images with VHS (brew install vhs)
 		case $$tape in */settings.tape) continue;; esac; \
 		echo "  recording $$tape"; vhs $$tape >/dev/null || exit 1; \
 	done
-	@rm -f docs/images/season-*.gif docs/images/once.gif
+	@rm -f docs/images/season-*.gif docs/images/once.gif docs/images/tmux.gif
+	@tmux -L txoko-readme kill-server 2>/dev/null || true
 
 clean: ## Remove build artifacts
 	rm -rf bin coverage.out
