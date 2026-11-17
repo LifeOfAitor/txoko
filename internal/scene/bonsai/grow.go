@@ -27,6 +27,15 @@ type tree struct {
 	baseY int    // lowest row the tree may use (just above the pot)
 	w     int
 	used  []bool // cells the fully grown tree occupies, row by row
+
+	// The fully grown crown's bounding box, so the sky can keep out of it.
+	top, left, right int
+}
+
+// inCrown reports whether (x, y) is inside the grown tree's bounding box,
+// widened by margin cells.
+func (t tree) inCrown(x, y, margin int) bool {
+	return y >= t.top-margin && y <= t.baseY && x >= t.left-margin && x <= t.right+margin
 }
 
 // willGrow reports whether the fully grown tree has something at (x, y).
@@ -116,6 +125,10 @@ func simulate(seed uint64, w, h int) tree {
 // order they were laid down in, so the reveal is stable.
 func (g *grower) finish() {
 	g.t.w, g.t.used = g.w, g.occupied
+	g.t.top, g.t.left, g.t.right = g.t.baseY+1, g.w, -1
+	for _, m := range g.t.marks {
+		g.t.top, g.t.left, g.t.right = min(g.t.top, m.y), min(g.t.left, m.x), max(g.t.right, m.x)
+	}
 	slices.SortStableFunc(g.t.marks, func(a, b mark) int { return a.tick - b.tick })
 }
 

@@ -346,6 +346,7 @@ func (m Model) render() string {
 	night := m.night()
 	scenes[m.scene].Draw(m.canvas, m.seed, scene.State{
 		Growth: m.growth, Frame: m.frame, Night: night, Season: m.currentSeason(),
+		MoonPhase: scene.MoonPhaseOf(m.now()),
 	})
 
 	return frame(inner, m.title(night, inner), renderCanvas(m.canvas, m.theme), m.footer(inner), m.theme)
