@@ -15,9 +15,6 @@ seed = 0
 # On the command line, --work=false turns it off again.
 work = false
 
-# Compact mode for a small tmux corner: no frame, one status line.
-mini = false
-
 [once]
 # Size of the `txoko --once` splash, as WIDTHxHEIGHT.
 size = "34x14"
@@ -30,5 +27,5 @@ break = 0
 
 [status]
 # What `txoko status` prints. Placeholders:
-# {icon} {growth} {bar} {today} {focus} {streak} {season} {moon}
+# {icon} {growth} {bar} {today} {focus} {streak} {season}
 format = "{icon} {growth}% · {streak}d"

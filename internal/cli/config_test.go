@@ -28,7 +28,6 @@ scene = "garden"
 season = "winter"
 seed = 9
 work = true
-mini = true
 [pomodoro]
 break = 10
 `)
@@ -37,7 +36,7 @@ break = 10
 		t.Fatalf("exit %d: %s", code, stderr)
 	}
 	o := (*calls)[0]
-	if o.Scene != "garden" || o.Season != "winter" || o.Seed != 9 || !o.Mini || o.Source == nil {
+	if o.Scene != "garden" || o.Season != "winter" || o.Seed != 9 || o.Source == nil {
 		t.Errorf("config not applied: %+v", o)
 	}
 
@@ -50,10 +49,10 @@ break = 10
 
 func TestFlagsBeatConfig(t *testing.T) {
 	freshDB(t)
-	withConfig(t, "scene = \"garden\"\nwork = true\nmini = true\n")
+	withConfig(t, "scene = \"garden\"\nwork = true\n")
 	calls := fakeTUI(t, nil)
-	run("--scene", "bonsai", "--work=false", "--mini=false")
-	if o := (*calls)[0]; o.Scene != "bonsai" || o.Source != nil || o.Mini {
+	run("--scene", "bonsai", "--work=false")
+	if o := (*calls)[0]; o.Scene != "bonsai" || o.Source != nil {
 		t.Errorf("flags should win: %+v", o)
 	}
 
@@ -125,7 +124,7 @@ func TestConfigCommand(t *testing.T) {
 	// The written template must leave txoko's defaults unchanged.
 	calls := fakeTUI(t, nil)
 	run()
-	if o := (*calls)[0]; o.Scene != "bonsai" || o.Source != nil || o.Mini || o.Seed != 0 {
+	if o := (*calls)[0]; o.Scene != "bonsai" || o.Source != nil || o.Seed != 0 {
 		t.Errorf("the template changed the defaults: %+v", o)
 	}
 

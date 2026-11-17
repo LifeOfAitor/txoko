@@ -45,7 +45,7 @@ func loadConfig() (config.Config, error) {
 		return cfg, bad("pomodoro.break must be between 0 and 120 minutes, got %d", cfg.Pomodoro.Break)
 	}
 	if cfg.Status.Format != "" {
-		if _, err := formatStatus(cfg.Status.Format, progress.Summary{}, scene.Summer, 0); err != nil {
+		if _, err := formatStatus(cfg.Status.Format, progress.Summary{}, scene.Summer); err != nil {
 			return cfg, bad("status.format: %v", err)
 		}
 	}

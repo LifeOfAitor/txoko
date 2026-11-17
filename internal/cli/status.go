@@ -16,7 +16,7 @@ import (
 const DefaultStatusFormat = "{icon} {growth}% · {streak}d"
 
 // statusFields documents the placeholders --format understands.
-var statusFields = []string{"icon", "growth", "bar", "today", "focus", "streak", "season", "moon"}
+var statusFields = []string{"icon", "growth", "bar", "today", "focus", "streak", "season"}
 
 var placeholder = regexp.MustCompile(`\{([a-z]+)\}`)
 
@@ -47,7 +47,7 @@ func runStatus(args []string, stdout, stderr io.Writer) int {
 	}
 
 	t := now()
-	line, err := formatStatus(*format, s, scene.SeasonOf(t), scene.MoonPhaseOf(t))
+	line, err := formatStatus(*format, s, scene.SeasonOf(t))
 	if err != nil {
 		return usageError(stderr, err.Error())
 	}
@@ -56,8 +56,7 @@ func runStatus(args []string, stdout, stderr io.Writer) int {
 }
 
 // formatStatus fills the placeholders of format.
-func formatStatus(format string, s progress.Summary, season scene.Season, moonPhase float64) (string, error) {
-	_, moon := scene.MoonPhaseName(moonPhase)
+func formatStatus(format string, s progress.Summary, season scene.Season) (string, error) {
 	filled := int(s.Growth*5 + 0.5)
 	values := map[string]string{
 		"icon":   statusIcon(s.Growth, season),
@@ -67,7 +66,6 @@ func formatStatus(format string, s progress.Summary, season scene.Season, moonPh
 		"focus":  fmt.Sprint(s.FocusToday),
 		"streak": fmt.Sprint(s.Streak),
 		"season": season.String(),
-		"moon":   moon,
 	}
 
 	var unknown string

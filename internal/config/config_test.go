@@ -30,7 +30,6 @@ scene = "garden"
 season = "winter"
 seed = 7
 work = true
-mini = true
 [once]
 size = "40x16"
 work = true
@@ -42,7 +41,7 @@ format = "{icon}"
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.Scene != "garden" || c.Season != "winter" || c.Seed != 7 || !c.Work || !c.Mini ||
+	if c.Scene != "garden" || c.Season != "winter" || c.Seed != 7 || !c.Work ||
 		c.Once.Size != "40x16" || !c.Once.Work || c.Pomodoro.Break != 10 || c.Status.Format != "{icon}" {
 		t.Errorf("Load = %+v", c)
 	}
@@ -69,7 +68,7 @@ func TestTemplateMatchesDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.Scene != "bonsai" || c.Season != "" || c.Seed != 0 || c.Work || c.Mini ||
+	if c.Scene != "bonsai" || c.Season != "" || c.Seed != 0 || c.Work ||
 		c.Once.Size != "34x14" || c.Once.Work || c.Pomodoro.Break != 0 ||
 		c.Status.Format != "{icon} {growth}% · {streak}d" {
 		t.Errorf("template = %+v", c)

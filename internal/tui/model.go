@@ -9,8 +9,8 @@ package tui
 import (
 	"fmt"
 	"hash/fnv"
+	"math/rand/v2"
 	"os"
-	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
@@ -36,9 +36,6 @@ const (
 const (
 	minWidth  = 24
 	minHeight = 9
-	// --mini has no frame, so it fits in much smaller tmux corners.
-	miniMinWidth  = 12
-	miniMinHeight = 4
 )
 
 // Options configures a new Model. Zero values pick sensible defaults.
@@ -65,9 +62,9 @@ type Options struct {
 	Now   func() time.Time // clock; injected so tests control day, night and timers
 	Theme *Theme           // nil uses DefaultTheme
 
-	// Mini drops the frame and the cheat sheet for a small tmux corner: the
-	// scene and one status line, with ? to show the keys.
-	Mini bool
+	// MoonPhase fixes the moon's phase (0 new, 0.5 full); nil picks a random
+	// one, and r rolls a new one along with a new tree.
+	MoonPhase *float64
 }
 
 // skyMode decides whether the sky shows day or night.
@@ -101,8 +98,7 @@ type Model struct {
 	loaded  bool
 	loadErr error
 
-	mini     bool
-	showKeys bool // --mini: the cheat sheet is expanded
+	moonPhase float64
 
 	pomo        pomodoro
 	onFocusDone func(time.Duration) error
@@ -127,7 +123,6 @@ func New(opts Options) Model {
 		source:  opts.Source,
 		refresh: opts.Refresh,
 
-		mini:        opts.Mini,
 		onFocusDone: opts.OnFocusDone,
 		onBreakDone: opts.OnBreakDone,
 	}
@@ -152,6 +147,10 @@ func New(opts Options) Model {
 	m.scene, _ = sceneIndex(opts.Scene) // unknown names fall back to the default
 	if s, ok := scene.ParseSeason(opts.Season); ok {
 		m.season, m.seasonFixed = s, true
+	}
+	m.moonPhase = randomMoon()
+	if opts.MoonPhase != nil {
+		m.moonPhase = *opts.MoonPhase
 	}
 	if opts.Focus > 0 {
 		m.pomo = pomodoro{phase: phaseFocus, focus: opts.Focus, brk: opts.Break, left: opts.Focus, last: m.now()}
@@ -290,10 +289,9 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 	case "s":
 		m.scene = (m.scene + 1) % len(scenes)
-	case "?":
-		m.showKeys = !m.showKeys
 	case "r":
 		m.seed = nextSeed(m.seed)
+		m.moonPhase = randomMoon()
 	case "space", "p":
 		m.paused = !m.paused
 		if !m.paused {
@@ -356,16 +354,9 @@ func (m Model) render() string {
 	if m.width == 0 || m.height == 0 {
 		return "" // waiting for the first WindowSizeMsg
 	}
-	minW, minH := minWidth, minHeight
-	if m.mini {
-		minW, minH = miniMinWidth, miniMinHeight
-	}
-	if m.width < minW || m.height < minH {
+	if m.width < minWidth || m.height < minHeight {
 		msg := m.theme.Muted.Render("txoko needs a bit more room 🌱")
 		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, msg)
-	}
-	if m.mini {
-		return m.renderMini()
 	}
 
 	inner := m.width - 2
@@ -376,36 +367,13 @@ func (m Model) render() string {
 	return frame(inner, m.title(night, inner), renderCanvas(m.canvas, m.theme), footer, m.theme)
 }
 
-// renderMini draws the scene edge to edge with a single status line below
-// it; ? expands that line into the full cheat sheet.
-func (m Model) renderMini() string {
-	status, compact, hints := m.footerParts()
-	var footer []string
-	if m.showKeys {
-		footer = footerBlock(m.width, status, compact, append(hints, m.hint("?", "hide keys")))
-	} else {
-		footer = []string{footerLine(m.width,
-			layout{status, m.hint("?", "keys")},
-			layout{compact, m.hint("?", "keys")},
-			layout{compact, nil},
-		)}
-	}
-	if len(footer) >= m.height {
-		// A tiny corner: the expanded keys take the whole space for now.
-		return strings.Join(footer[:m.height], "\n")
-	}
-	m.canvas.Resize(m.width, m.height-len(footer))
-	m.drawScene()
-	return strings.Join(append(renderCanvas(m.canvas, m.theme), footer...), "\n")
-}
-
 // drawScene paints the current scene onto the canvas and reports whether
 // it is night.
 func (m Model) drawScene() bool {
 	night := m.night()
 	scenes[m.scene].Draw(m.canvas, m.seed, scene.State{
 		Growth: m.growth, Frame: m.frame, Night: night, Season: m.currentSeason(),
-		MoonPhase: scene.MoonPhaseOf(m.now()),
+		MoonPhase: m.moonPhase,
 	})
 	return night
 }
@@ -505,6 +473,10 @@ func (m Model) status() []span {
 		{fmt.Sprintf("%dd", m.summary.Streak), t.Accent},
 	}
 }
+
+// randomMoon picks a moon phase that's nice to look at: never so close to
+// new moon that it all but disappears.
+func randomMoon() float64 { return 0.15 + rand.Float64()*0.7 }
 
 // nextSeed derives a new seed deterministically (splitmix64), so reseeding
 // is reproducible in tests.

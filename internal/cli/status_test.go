@@ -16,18 +16,21 @@ func TestFormatStatus(t *testing.T) {
 	}{
 		{DefaultStatusFormat, "🍂 72% · 5d"},
 		{"{bar} {today}c {focus}m", "▰▰▰▰▱ 3c 50m"}, // 72% of 5 cells rounds to 4
-		{"{season} {moon}", "autumn 🌓"},
+		{"{season}", "autumn"},
 		{"no placeholders", "no placeholders"},
 		{"{growth}{growth}", "7272"},
 	}
 	for _, tt := range tests {
-		got, err := formatStatus(tt.format, s, scene.Autumn, 0.25)
+		got, err := formatStatus(tt.format, s, scene.Autumn)
 		if err != nil || got != tt.want {
 			t.Errorf("formatStatus(%q) = %q, %v; want %q", tt.format, got, err, tt.want)
 		}
 	}
-	if _, err := formatStatus("{nope}", s, scene.Autumn, 0); err == nil || !strings.Contains(err.Error(), "{nope}") {
+	if _, err := formatStatus("{nope}", s, scene.Autumn); err == nil || !strings.Contains(err.Error(), "{nope}") {
 		t.Errorf("unknown placeholder error = %v", err)
+	}
+	if _, err := formatStatus("{moon}", s, scene.Autumn); err == nil {
+		t.Error("{moon} is no longer a placeholder")
 	}
 }
 

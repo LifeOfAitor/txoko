@@ -21,7 +21,6 @@ type Config struct {
 	Season string `toml:"season"`
 	Seed   uint64 `toml:"seed"`
 	Work   bool   `toml:"work"`
-	Mini   bool   `toml:"mini"`
 
 	Once struct {
 		Size string `toml:"size"`

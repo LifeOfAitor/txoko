@@ -31,6 +31,8 @@ type OnceOptions struct {
 	Summary *progress.Summary
 	Color   bool
 	Now     func() time.Time
+	// MoonPhase fixes the moon's phase; nil picks a random one.
+	MoonPhase *float64
 }
 
 // Once draws the scene a single time, with a little info panel to its
@@ -59,9 +61,13 @@ func Once(w io.Writer, o OnceOptions) error {
 	night := now.Hour() < 7 || now.Hour() >= 20
 	idx, _ := sceneIndex(o.Scene)
 
+	moon := randomMoon()
+	if o.MoonPhase != nil {
+		moon = *o.MoonPhase
+	}
 	c := canvas.New(o.Width, o.Height)
 	scenes[idx].Draw(c, o.Seed, scene.State{
-		Growth: clamp01(o.Growth), Night: night, Season: season, MoonPhase: scene.MoonPhaseOf(now),
+		Growth: clamp01(o.Growth), Night: night, Season: season, MoonPhase: moon,
 	})
 	art := renderCanvas(c, theme)
 	info := onceInfo(theme, scenes[idx].Name(), season, night, clamp01(o.Growth), o.Summary, now)
@@ -87,7 +93,6 @@ func onceInfo(t Theme, sceneName string, season scene.Season, night bool, growth
 	}
 	label := func(name string) string { return t.Muted.Render(fmt.Sprintf("%-7s", name)) }
 	filled, empty := progressBar(growth, 10)
-	moonName, moonEmoji := scene.MoonPhaseName(scene.MoonPhaseOf(now))
 
 	header := t.Title.Render("txoko") + t.Muted.Render(" · "+sceneName+" · "+season.String()+" · "+sky)
 	lines := []string{
@@ -106,7 +111,6 @@ func onceInfo(t Theme, sceneName string, season scene.Season, night bool, growth
 		)
 	}
 	lines = append(lines,
-		label("moon")+moonEmoji+" "+t.Accent.Render(moonName),
 		label("date")+t.Accent.Render(now.Format("Mon 2 Jan")),
 	)
 	return lines

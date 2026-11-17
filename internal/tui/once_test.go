@@ -17,6 +17,9 @@ func once(t *testing.T, o OnceOptions) string {
 	if o.Seed == 0 {
 		o.Seed = 42
 	}
+	if o.MoonPhase == nil {
+		o.MoonPhase = &testMoon
+	}
 	var b bytes.Buffer
 	if err := Once(&b, o); err != nil {
 		t.Fatal(err)
@@ -34,7 +37,7 @@ func TestOnceGolden(t *testing.T) {
 
 func TestOnceInfo(t *testing.T) {
 	out := once(t, OnceOptions{Growth: 1, Summary: &progress.Summary{Today: 1, Streak: 2}})
-	for _, want := range []string{"txoko · bonsai · autumn · day", "growth ▰▰▰▰▰▰▰▰▰▰ 100%", "today  1 commit", "streak 2 days", "moon", "date   Mon 16 Nov"} {
+	for _, want := range []string{"txoko · bonsai · autumn · day", "growth ▰▰▰▰▰▰▰▰▰▰ 100%", "today  1 commit", "streak 2 days", "date   Mon 16 Nov"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("missing %q in:\n%s", want, out)
 		}
@@ -45,6 +48,12 @@ func TestOnceInfo(t *testing.T) {
 	focus := once(t, OnceOptions{Growth: 1, Summary: &progress.Summary{FocusToday: 25}})
 	if !strings.Contains(focus, "0 commits · 25 min focus") {
 		t.Errorf("focus minutes missing:\n%s", focus)
+	}
+}
+
+func TestOnceHasNoMoonPhaseLine(t *testing.T) {
+	if out := once(t, OnceOptions{Growth: 1}); strings.Contains(out, "moon") || strings.Contains(out, "quarter") {
+		t.Errorf("the info panel should not mention the moon phase:\n%s", out)
 	}
 }
 

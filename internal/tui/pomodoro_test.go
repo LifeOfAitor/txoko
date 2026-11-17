@@ -26,7 +26,7 @@ type recorder struct {
 func newPomo(clock *fakeClock, focus, brk time.Duration, rec *recorder) Model {
 	plain := PlainTheme()
 	return New(Options{
-		Seed: 42, Theme: &plain, Now: clock.now, Focus: focus, Break: brk,
+		Seed: 42, Theme: &plain, Now: clock.now, Focus: focus, Break: brk, MoonPhase: &testMoon,
 		OnFocusDone: func(d time.Duration) error { rec.focus = append(rec.focus, d); return rec.err },
 		OnBreakDone: func() { rec.breaks++ },
 	})

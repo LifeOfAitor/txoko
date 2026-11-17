@@ -117,7 +117,6 @@ The footer counts down (all keys are always listed, wrapping onto extra lines in
 | <kbd>+</kbd> / <kbd>-</kbd> | grow or shrink the scene (not with `--work`) |
 | <kbd>s</kbd> | switch scene (bonsai, garden) |
 | <kbd>e</kbd> | cycle the season: spring → summer → autumn → winter → today's |
-| <kbd>?</kbd> | show or hide the keys (in `--mini`) |
 | <kbd>n</kbd> | switch between day and night (until you press it, the sky follows the clock) |
 | <kbd>r</kbd> | plant a new layout |
 | <kbd>space</kbd> | pause the animation |
@@ -139,8 +138,8 @@ txoko --once --work
             *\@*  | /                growth ▰▰▰▰▰▰▰▰▱▱ 77%
               _\  &\                 today  22 commits · 1 min focus
                #& |#&                streak 2 days
-               *&#/%%@               moon   🌓 first quarter
-               %,|& #&               date   Tue 17 Nov
+               *&#/%%@               date   Tue 17 Nov
+               %,|& #&
                  ||
           \,,~_::,,_,./
            \_________/
@@ -148,10 +147,10 @@ txoko --once --work
 
 `--size 40x16` changes its size. Without `--work` it shows a fully grown tree.
 
-**A little corner in tmux** — no frame, one status line, <kbd>?</kbd> shows the keys:
+**A little corner in tmux** — the view adapts to narrow panes: the title shortens and the keys wrap onto extra lines, so every control stays visible:
 
 ```sh
-tmux split-window -h -l 32 'txoko --mini --work'
+tmux split-window -h -l 32 'txoko --work'
 ```
 
 **Your status bar or prompt**, refreshed every few seconds:
@@ -162,7 +161,7 @@ set -g status-interval 10
 set -g status-right '#(txoko status) '
 ```
 
-`txoko status` prints `🍂 77% · 2d`. Shape it with `--format` and the placeholders `{icon}` `{growth}` `{bar}` `{today}` `{focus}` `{streak}` `{season}` `{moon}`, for example `txoko status --format '{moon} {bar} {today}c'` → `🌓 ▰▰▰▰▱ 22c`.
+`txoko status` prints `🍂 77% · 2d`. Shape it with `--format` and the placeholders `{icon}` `{growth}` `{bar}` `{today}` `{focus}` `{streak}` `{season}`, for example `txoko status --format '{icon} {bar} {today}c'` → `🍂 ▰▰▰▰▱ 22c`.
 
 ### Settings
 
@@ -177,7 +176,6 @@ txoko config         # shows where it is and checks it
 scene = "bonsai"
 season = ""        # empty follows the calendar
 work = true        # grow from your activity by default (--work=false to override)
-mini = false
 
 [once]
 size = "34x14"
@@ -205,7 +203,7 @@ The tree dresses for the time of year, following the calendar (northern hemisphe
 
 Colors come from your terminal's own palette, so every season matches your theme.
 
-**Nights are soft:** the tree, the pot and the ground dim down, while the sky keeps its own light. The moon is a big pixel-art disc in its **real phase** for today's date, the sky fills with stars of four sizes that twinkle at their own pace, and every now and then a shooting star crosses it. Press <kbd>n</kbd> to switch between day and night; until you do, the sky follows the clock.
+**Nights are soft:** the tree, the pot and the ground dim down, while the sky keeps its own light. The moon is a big pixel-art disc in a different phase every time (<kbd>r</kbd> rolls a new one with a new tree), the sky fills with stars of four sizes that twinkle at their own pace, and every now and then a shooting star crosses it. Press <kbd>n</kbd> to switch between day and night; until you do, the sky follows the clock.
 
 ```
 ╭─ txoko · bonsai · winter · night · paused ───────────────────────────╮
@@ -240,7 +238,6 @@ Colors come from your terminal's own palette, so every season matches your theme
 | `txoko --work` | open your scene, grown by your real activity |
 | `txoko --season winter` | start in a season instead of today's |
 | `txoko --once [--work]` | print the scene once with an info panel (for `.zshrc`) |
-| `txoko --mini` | compact mode for a small tmux corner |
 | `txoko status [--format F]` | one line for tmux or your prompt |
 | `txoko config [init]` | show or create the settings file |
 | `txoko --pomodoro M [--break M]` | focus session: a new tree blooms as the minutes pass |

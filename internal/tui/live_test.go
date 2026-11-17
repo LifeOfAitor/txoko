@@ -13,7 +13,7 @@ import (
 
 func newLive(src func() (progress.Summary, error)) Model {
 	plain := PlainTheme()
-	return New(Options{Seed: 42, Now: noon, Theme: &plain, Source: src, Refresh: time.Millisecond})
+	return New(Options{Seed: 42, Now: noon, Theme: &plain, Source: src, Refresh: time.Millisecond, MoonPhase: &testMoon})
 }
 
 func fixed(s progress.Summary) func() (progress.Summary, error) {
