@@ -49,7 +49,7 @@ func TestRun(t *testing.T) {
 		{"growth negative", []string{"--growth=-0.1"}, ExitUsage, "", "--growth must be between 0 and 1", false},
 		{"growth not a number", []string{"--growth", "lots"}, ExitUsage, "", "invalid value", false},
 		{"known scene", []string{"--scene", "garden"}, ExitOK, "", "", true},
-		{"unknown scene", []string{"--scene", "volcano"}, ExitUsage, "", `unknown scene "volcano" (available: bonsai, island, garden)`, false},
+		{"unknown scene", []string{"--scene", "volcano"}, ExitUsage, "", `unknown scene "volcano" (available: bonsai, island, arch, garden)`, false},
 	}
 
 	for _, tt := range tests {
@@ -102,7 +102,7 @@ func TestRunReportsTUIErrors(t *testing.T) {
 
 func TestUsageListsScenes(t *testing.T) {
 	_, stdout, _ := run("--help")
-	if !strings.Contains(stdout, "bonsai, island, garden (default bonsai)") {
+	if !strings.Contains(stdout, "bonsai, island, arch, garden (default bonsai)") {
 		t.Errorf("help should list scenes, got:\n%s", stdout)
 	}
 }
