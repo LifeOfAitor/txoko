@@ -7,7 +7,7 @@
 [![CI](https://github.com/LifeOfAitor/txoko/actions/workflows/ci.yml/badge.svg)](https://github.com/LifeOfAitor/txoko/actions/workflows/ci.yml)
 [![Go version](https://img.shields.io/github/go-mod/go-version/LifeOfAitor/txoko?logo=go&logoColor=white)](go.mod)
 [![License: MIT](https://img.shields.io/badge/license-MIT-a6e3a1)](LICENSE)
-[![Status](https://img.shields.io/badge/status-sprouting%20🌱-f9e2af)](#roadmap)
+[![Release](https://img.shields.io/github/v/release/LifeOfAitor/txoko?color=f4b8e4)](https://github.com/LifeOfAitor/txoko/releases)
 
 <img src="docs/images/demo.gif" alt="txoko: a bonsai grows in spring, night falls with a big moon and stars, and the tree goes through summer, autumn and a snowy winter" width="820">
 
@@ -16,7 +16,7 @@
 *Txoko* means "little corner" in Basque. It's an ambient terminal app with a bonsai that **really grows**, branch by branch: shape it by hand, let your commits and focus sessions grow it, or keep it as a quiet corner of your tmux. It dresses for the season, dims down at night under a big moon, and uses your terminal's own colors, so it fits right into your rice.
 
 > [!NOTE]
-> txoko is young. There's no release yet, but you can already [run it from source](#install) — or star the repo to watch it grow.
+> txoko is young and growing fast. Star the repo to watch it grow, and [open an issue](https://github.com/LifeOfAitor/txoko/issues) if something looks off.
 
 ## Features
 
@@ -46,12 +46,25 @@
 
 ## Install
 
-There's no release yet, so for now build it from source. You'll need [Go](https://go.dev/dl/) 1.27+.
+**Homebrew** (macOS and Linux):
+
+```sh
+brew install LifeOfAitor/tap/txoko
+```
+
+**Go** 1.27+:
+
+```sh
+go install github.com/LifeOfAitor/txoko/cmd/txoko@latest
+```
+
+**Binaries** for macOS and Linux (Intel and ARM) are on the [releases page](https://github.com/LifeOfAitor/txoko/releases).
+
+**From source:**
 
 ```sh
 git clone https://github.com/LifeOfAitor/txoko.git
-cd txoko
-make build
+cd txoko && make build
 ./bin/txoko
 ```
 
@@ -189,7 +202,7 @@ A typo such as `sene = "bonsai"` is reported instead of silently ignored.
 - [x] **1 · First scenes** — a growing bonsai, seasons and night skies
 - [x] **2 · Real activity** — git hooks and a local SQLite store
 - [x] **3 · Everywhere** — neofetch-style greeting, tmux status line and a settings file
-- [ ] **4 · First release** — `brew install` via a Homebrew tap
+- [x] **4 · First release** — `brew install` via a Homebrew tap
 - [ ] **5 · More scenes** — landscapes that grow, plus custom scenes from config
 - [ ] **6 · Your year** — a landscape built from your GitHub contribution calendar
 - [ ] **7 · Activity daemon** — active-time tracking as a background service
@@ -205,6 +218,7 @@ make run     # build and run
 make check   # format, lint and test — run before committing
 make cover   # open the coverage report
 make demo    # re-record the README images (needs `brew install vhs`)
+make snapshot  # build a full release locally without publishing (needs goreleaser)
 make help    # list every task
 ```
 
@@ -215,6 +229,10 @@ go test ./... -update
 ```
 
 The README images are recorded with [VHS](https://github.com/charmbracelet/vhs) from the scripts in [`docs/tapes`](docs/tapes).
+
+## Releasing
+
+See [RELEASING.md](RELEASING.md): pushing a version tag builds and publishes everything.
 
 ## License
 
