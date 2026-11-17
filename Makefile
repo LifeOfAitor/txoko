@@ -10,7 +10,7 @@ LDFLAGS := -s -w \
 
 .DEFAULT_GOAL := help
 
-.PHONY: help build run test cover lint fmt check clean
+.PHONY: help build run test cover lint fmt check clean demo
 
 help: ## Show this help
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z_-]+:.*##/ {printf "  \033[32m%-8s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -36,6 +36,13 @@ fmt: ## Format code
 	golangci-lint fmt
 
 check: fmt lint test ## Format, lint and test (run before committing)
+
+demo: build ## Record the README images with VHS (brew install vhs)
+	@for tape in docs/tapes/*.tape; do \
+		case $$tape in */settings.tape) continue;; esac; \
+		echo "  recording $$tape"; vhs $$tape >/dev/null || exit 1; \
+	done
+	@rm -f docs/images/season-*.gif docs/images/once.gif
 
 clean: ## Remove build artifacts
 	rm -rf bin coverage.out
