@@ -25,6 +25,16 @@ type tree struct {
 	marks []mark // in growth order: revealing a prefix shows a younger tree
 	baseX int    // where the trunk leaves the soil
 	baseY int    // lowest row the tree may use (just above the pot)
+	w     int
+	used  []bool // cells the fully grown tree occupies, row by row
+}
+
+// willGrow reports whether the fully grown tree has something at (x, y).
+func (t tree) willGrow(x, y int) bool {
+	if x < 0 || y < 0 || x >= t.w || y*t.w+x >= len(t.used) {
+		return false
+	}
+	return t.used[y*t.w+x]
 }
 
 type kind uint8
@@ -105,6 +115,7 @@ func simulate(seed uint64, w, h int) tree {
 // finish puts marks in growth order. Marks from the same tick keep the
 // order they were laid down in, so the reveal is stable.
 func (g *grower) finish() {
+	g.t.w, g.t.used = g.w, g.occupied
 	slices.SortStableFunc(g.t.marks, func(a, b mark) int { return a.tick - b.tick })
 }
 

@@ -27,35 +27,48 @@ func (Scene) Draw(c *canvas.Canvas, seed uint64, s scene.State) { Draw(c, seed, 
 
 // Draw paints the bonsai onto c, replacing whatever was there.
 func Draw(c *canvas.Canvas, seed uint64, s scene.State) {
+	t, leaves, g, ok := drawTree(c, seed, s)
+	if !ok {
+		return
+	}
+	if s.Night {
+		drawNight(c, seed, t, leaves, g, s.Frame, s.Season)
+	}
+	drawWeather(c, seed, t, leaves, g, s.Frame, s.Season)
+}
+
+// drawTree paints everything that doesn't move: pot, tree and what the
+// season leaves on them. It returns the tree, its visible leaves and the
+// clamped growth for the animations, or ok=false when there's no room.
+func drawTree(c *canvas.Canvas, seed uint64, s scene.State) (t tree, leaves []mark, g float64, ok bool) {
 	c.Clear()
 	w, h := c.Width(), c.Height()
 	if w == 0 || h == 0 {
-		return
+		return tree{}, nil, 0, false
 	}
 	drawPot(c, seed)
 	if h <= potHeight {
-		return
+		return tree{}, nil, 0, false
 	}
 
-	t := grown(seed, w, h)
-	g := clamp01(s.Growth)
+	t = grown(seed, w, h)
+	g = clamp01(s.Growth)
 	// Every percent of growth reveals the same amount of tree.
 	visible := t.marks[:int(math.Round(g*float64(len(t.marks))))]
 
-	var shown []mark // visible leaves, for the animations
 	for _, m := range visible {
-		c.Set(m.x, m.y, m.r, m.ink)
-		if m.leaf {
-			shown = append(shown, m)
+		if !m.leaf {
+			c.Set(m.x, m.y, m.r, m.ink)
+			continue
+		}
+		r, ink, onTree := dressLeaf(m, s.Season)
+		if onTree {
+			c.Set(m.x, m.y, r, ink)
+			leaves = append(leaves, mark{x: m.x, y: m.y, r: r, ink: ink, leaf: true})
 		}
 	}
-
-	if s.Night {
-		drawNight(c, seed, t, shown, g, s.Frame)
-	}
-	if g >= 0.6 {
-		drawFallingLeaves(c, t, shown, s.Frame)
-	}
+	dressGround(c, t, visible, s.Season)
+	return t, leaves, g, true
 }
 
 // drawPot draws a shallow pot centered at the bottom of the canvas:
@@ -89,9 +102,9 @@ func drawPot(c *canvas.Canvas, seed uint64) {
 	c.Set(x0+pw-2, base, '/', canvas.InkPot)
 }
 
-// drawNight adds a moon, a few twinkling stars and fireflies that hover
-// around the leaves.
-func drawNight(c *canvas.Canvas, seed uint64, t tree, leaves []mark, g float64, frame int) {
+// drawNight adds a moon, a few twinkling stars and, on warm nights,
+// fireflies that hover around the leaves.
+func drawNight(c *canvas.Canvas, seed uint64, t tree, leaves []mark, g float64, frame int, season scene.Season) {
 	w := c.Width()
 	c.SetIfEmpty(w-3, 0, '☾', canvas.InkMoon)
 
@@ -106,7 +119,8 @@ func drawNight(c *canvas.Canvas, seed uint64, t tree, leaves []mark, g float64, 
 		c.SetIfEmpty(x, y, glyph, canvas.InkStar)
 	}
 
-	if len(leaves) == 0 || g < 0.3 {
+	warm := season == scene.Summer || season == scene.Spring
+	if !warm || len(leaves) == 0 || g < 0.3 {
 		return
 	}
 	for i := range 1 + int(g*3) {
@@ -120,29 +134,6 @@ func drawNight(c *canvas.Canvas, seed uint64, t tree, leaves []mark, g float64, 
 		if y <= t.baseY {
 			c.SetIfEmpty(x, y, glyph, canvas.InkFirefly)
 		}
-	}
-}
-
-// drawFallingLeaves lets a couple of leaves drift down from the crown.
-func drawFallingLeaves(c *canvas.Canvas, t tree, leaves []mark, frame int) {
-	if len(leaves) == 0 {
-		return
-	}
-	const period = 90
-	for i := range 2 {
-		f := frame + i*47
-		from := leaves[(f/period*31+i*13)%len(leaves)]
-		step := f % period
-		y := from.y + 1 + step/4
-		if y > t.baseY {
-			continue
-		}
-		x := from.x + triangle(step/5, 3) - 1
-		glyph := ','
-		if (step/4)%2 == 1 {
-			glyph = '`'
-		}
-		c.SetIfEmpty(x, y, glyph, canvas.InkLeafDim)
 	}
 }
 

@@ -50,6 +50,12 @@ func DefaultTheme() Theme {
 	t.Ink[canvas.InkLeafDark] = fg(lipgloss.Green)
 	t.Ink[canvas.InkLeafDim] = fg(lipgloss.Green).Faint(true)
 	t.Ink[canvas.InkPot] = fg(lipgloss.White)
+	t.Ink[canvas.InkBlossom] = fg(lipgloss.BrightMagenta).Bold(true)
+	t.Ink[canvas.InkBlossomLight] = fg(lipgloss.White)
+	t.Ink[canvas.InkAutumnRed] = fg(lipgloss.Red)
+	t.Ink[canvas.InkAutumnOrange] = fg(lipgloss.BrightRed).Bold(true)
+	t.Ink[canvas.InkAutumnGold] = fg(lipgloss.Yellow).Bold(true)
+	t.Ink[canvas.InkSnow] = fg(lipgloss.BrightWhite).Bold(true)
 
 	t.Border = fg(lipgloss.BrightBlack)
 	t.Title = fg(lipgloss.Green).Bold(true)

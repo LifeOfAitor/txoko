@@ -33,6 +33,12 @@ const (
 	InkLeafDark
 	InkLeafDim
 	InkPot
+	InkBlossom      // cherry blossom pink
+	InkBlossomLight // pale petals
+	InkAutumnRed
+	InkAutumnOrange
+	InkAutumnGold
+	InkSnow
 
 	// InkCount is the number of inks. Keep it last.
 	InkCount
