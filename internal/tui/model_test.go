@@ -131,17 +131,21 @@ func TestGrowthKeys(t *testing.T) {
 	}
 }
 
-func TestSkyCycles(t *testing.T) {
-	m := newTest(noon)
-	want := []bool{false, false, true, false} // auto(noon) → day → night → auto
+func TestNightTogglesInOnePress(t *testing.T) {
+	m := newTest(noon) // follows the clock: day at noon
+	want := []bool{false, true, false, true}
 	for i, w := range want {
 		if got := m.night(); got != w {
-			t.Errorf("step %d: night = %v, want %v", i, got, w)
+			t.Errorf("press %d: night = %v, want %v", i, got, w)
 		}
 		m, _ = send(m, key("n"))
 	}
+	// At night, one press brings the day.
+	if m, _ := send(newTest(midnight), key("n")); m.night() {
+		t.Error("at 23:30 one press of n should switch to day")
+	}
 	if !newTest(midnight).night() {
-		t.Error("auto sky should be night at 23:30")
+		t.Error("before any key, the sky follows the clock")
 	}
 }
 
@@ -294,7 +298,7 @@ func TestFooterLineFallbacks(t *testing.T) {
 }
 
 func TestFrameWithoutTitleRoom(t *testing.T) {
-	got := frame(4, []span{{text: "too long title"}}, []string{"abcd"}, "    ", PlainTheme())
+	got := frame(4, []span{{text: "too long title"}}, []string{"abcd"}, []string{"    "}, PlainTheme())
 	want := "╭────╮\n│abcd│\n├────┤\n│    │\n╰────╯"
 	if got != want {
 		t.Errorf("frame =\n%s\nwant\n%s", got, want)
@@ -362,6 +366,50 @@ func TestTitleShrinksInsteadOfVanishing(t *testing.T) {
 		}
 		if got.String() != tt.want {
 			t.Errorf("inner %d: title %q, want %q", tt.inner, got.String(), tt.want)
+		}
+	}
+}
+
+func TestFooterBlock(t *testing.T) {
+	status := []span{{text: "growth 50%"}}
+	compact := []span{{text: "50%"}}
+	hints := [][]span{{{text: "s scene"}}, {{text: "n night"}}, {{text: "q quit"}}}
+
+	if got := footerBlock(60, status, compact, hints); len(got) != 1 || !strings.Contains(got[0], "s scene  n night  q quit") {
+		t.Errorf("wide: %q", got)
+	}
+
+	got := footerBlock(20, status, compact, hints)
+	if len(got) < 2 || !strings.Contains(got[0], "growth 50%") {
+		t.Fatalf("narrow: status should get its own line: %q", got)
+	}
+	joined := strings.Join(got, "\n")
+	for _, h := range []string{"s scene", "n night", "q quit"} {
+		if !strings.Contains(joined, h) {
+			t.Errorf("narrow footer lost %q:\n%s", h, joined)
+		}
+	}
+	for _, line := range got {
+		if w := lipgloss.Width(line); w != 20 {
+			t.Errorf("line %q is %d wide, want 20", line, w)
+		}
+	}
+
+	if got := footerBlock(8, status, compact, hints); !strings.Contains(got[0], "50%") {
+		t.Errorf("very narrow: compact status expected, got %q", got[0])
+	}
+}
+
+// TestCheatSheetIsAlwaysComplete: however narrow the window, every key is
+// listed somewhere in the footer.
+func TestCheatSheetIsAlwaysComplete(t *testing.T) {
+	for _, w := range []int{24, 30, 40, 60, 120} {
+		m, _ := send(newTest(noon), size(w, 20))
+		view := m.View().Content
+		for _, k := range []string{"+/- grow", "s scene", "e season", "n night", "r reseed", "space pause", "q quit"} {
+			if !strings.Contains(view, k) {
+				t.Errorf("width %d: %q missing from the footer:\n%s", w, k, lastLines(view, 5))
+			}
 		}
 	}
 }

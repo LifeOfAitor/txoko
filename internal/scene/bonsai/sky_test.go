@@ -66,7 +66,7 @@ func TestMoonGrowsWithTheScreenAndAvoidsTheCrown(t *testing.T) {
 		lit, _ := moonCells(c)
 		for y := range c.Height() {
 			for x, cell := range c.Row(y) {
-				if cell.Ink == canvas.InkMoon && tr.inCrown(x, y, 0) {
+				if cell.Ink == canvas.InkMoon && tr.underCanopy(x, y, 0) {
 					t.Errorf("%dx%d: the moon overlaps the crown at (%d,%d)", w, h, x, y)
 				}
 			}
@@ -103,8 +103,8 @@ func TestStarsComeInFourSizesOutsideTheCrown(t *testing.T) {
 			switch cell.Ink {
 			case canvas.InkStarDim, canvas.InkStar, canvas.InkStarBright:
 				n[cell.Ink]++
-				if tr.inCrown(x, y, 0) {
-					t.Errorf("star %q inside the crown at (%d,%d)", cell.Rune, x, y)
+				if tr.underCanopy(x, y, 0) {
+					t.Errorf("star %q below the tree's silhouette at (%d,%d)", cell.Rune, x, y)
 				}
 			}
 		}
@@ -152,6 +152,40 @@ func TestShootingStar(t *testing.T) {
 	}
 	if visible(shootingEvery + shootingFor + 10) {
 		t.Error("the shooting star should be gone after its flight")
+	}
+}
+
+// TestWideShortPaneHasSkyAboveTheTree: in a wide, short pane the stars
+// must not be pushed to the sides only.
+func TestWideShortPaneHasSkyAboveTheTree(t *testing.T) {
+	c, tr := sky(140, 18, 0.5, 0)
+	above := 0
+	for y := range c.Height() {
+		for x, cell := range c.Row(y) {
+			isStar := cell.Ink == canvas.InkStarDim || cell.Ink == canvas.InkStar || cell.Ink == canvas.InkStarBright
+			if isStar && x >= tr.left && x <= tr.right && y < tr.top {
+				above++
+			}
+		}
+	}
+	if above == 0 {
+		t.Error("no stars above the tree in a wide, short pane")
+	}
+	if tr.top < 2 {
+		t.Errorf("the tree should leave the top rows to the sky, its top is row %d", tr.top)
+	}
+}
+
+func TestUnderCanopy(t *testing.T) {
+	tr := grown(testSeed, 60, 20)
+	if tr.underCanopy(-1, 5, 0) || tr.underCanopy(60, 5, 0) {
+		t.Error("columns outside the canvas are never under the canopy")
+	}
+	if !tr.underCanopy(tr.baseX, tr.baseY, 0) {
+		t.Error("the trunk's base is under the canopy")
+	}
+	if tr.underCanopy(tr.baseX, 0, 0) && tr.top > 0 {
+		t.Error("the top row is sky when the tree doesn't reach it")
 	}
 }
 

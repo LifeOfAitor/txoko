@@ -75,6 +75,18 @@ func New(w, h int) *Canvas {
 	return c
 }
 
+// Resize changes the canvas size in place, clearing it. Keeping the same
+// *Canvas lets a UI hold on to it while its layout changes.
+func (c *Canvas) Resize(w, h int) {
+	w, h = max(w, 0), max(h, 0)
+	if w == c.w && h == c.h {
+		return
+	}
+	c.w, c.h = w, h
+	c.cells = make([]Cell, w*h)
+	c.Clear()
+}
+
 // Width returns the number of columns.
 func (c *Canvas) Width() int { return c.w }
 

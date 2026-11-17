@@ -122,41 +122,37 @@ func (m Model) handlePomodoroKey(key string) (Model, tea.Cmd, bool) {
 	return m, nil, false
 }
 
-func (m Model) pomodoroFooter(inner int) string {
+func (m Model) pomodoroFooter(inner int) []string {
 	t := m.theme
 	p := m.pomo
-	key := func(k, label string) []span { return []span{{k, t.Accent}, {" " + label + "  ", t.Muted}} }
-	quit := []span{{"q", t.Accent}, {" quit", t.Muted}}
+	quit := m.hint("q", "quit")
 
-	var left, hints []span
+	var status []span
+	var hints [][]span
 	switch {
 	case p.quitArmed:
-		left = []span{{"press q again to abandon this session", t.Accent}}
-		hints = append(key("any key", "keep going"), quit...)
+		status = []span{{"press q again to abandon this session", t.Accent}}
+		hints = [][]span{m.hint("any key", "keep going"), quit}
 	case p.phase == phaseFocus:
 		filled, empty := progressBar(m.pomoTarget(), 10)
-		left = []span{
+		status = []span{
 			{"focus ", t.Muted},
 			{filled, t.Ink[canvas.InkLeaf]},
 			{empty, t.Muted},
 			{" " + clock(p.left), t.Accent},
 		}
-		hints = append(append(append(key("space", "pause"), key("s", "scene")...), key("e", "season")...), quit...)
+		hints = [][]span{m.hint("space", "pause"), m.hint("s", "scene"), m.hint("e", "season"), m.hint("n", "night"), quit}
 	case p.phase == phaseBreak:
-		left = []span{{"break ", t.Muted}, {clock(p.left), t.Accent}, {"  stretch, breathe", t.Muted}}
-		hints = append(key("space", "pause"), quit...)
+		status = []span{{"break ", t.Muted}, {clock(p.left), t.Accent}, {"  stretch, breathe", t.Muted}}
+		hints = [][]span{m.hint("space", "pause"), m.hint("n", "night"), quit}
 	default:
-		left = []span{{"✿ session complete", t.Accent}, {fmt.Sprintf("  %s today", plural(p.sessions, "session")), t.Muted}}
-		hints = append(key("enter", "plant another"), quit...)
+		status = []span{{"✿ session complete", t.Accent}, {fmt.Sprintf("  %s today", plural(p.sessions, "session")), t.Muted}}
+		hints = [][]span{m.hint("enter", "plant another"), quit}
 	}
 	if p.saveErr != nil {
-		left = append(left, span{"  (not saved)", t.Accent})
+		status = append(status, span{"  (not saved)", t.Accent})
 	}
-	return footerLine(inner,
-		layout{left, hints},
-		layout{left, quit},
-		layout{left, nil},
-	)
+	return footerBlock(inner, status, status, hints)
 }
 
 // clock formats a duration as mm:ss, rounding up so a session shows 50:00

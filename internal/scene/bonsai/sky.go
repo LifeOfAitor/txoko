@@ -9,7 +9,7 @@ import (
 
 // drawSky paints the night sky: the moon in its real phase, stars of four
 // sizes that twinkle at their own pace, and now and then a shooting star.
-// Everything stays out of the tree's crown.
+// Everything stays above the tree's silhouette.
 func drawSky(c *canvas.Canvas, seed uint64, t tree, moonPhase float64, frame int) {
 	moon := drawMoon(c, t, moonPhase)
 	drawStars(c, seed, t, moon, frame)
@@ -41,7 +41,15 @@ func drawMoon(c *canvas.Canvas, t tree, phase float64) box {
 		}
 		return box{x0, y0, x0 + 2*r - 1, y0 + r - 1}
 	}
-	for r > 2 && t.right >= place(r).x0-2 && t.top <= place(r).y1+1 {
+	touches := func(b box) bool {
+		for x := b.x0 - 2; x <= b.x1+2; x++ {
+			if t.underCanopy(x, b.y1, 1) {
+				return true
+			}
+		}
+		return false
+	}
+	for r > 2 && touches(place(r)) {
 		r--
 	}
 	if w < 20 || r < 2 {
@@ -114,8 +122,11 @@ func drawStars(c *canvas.Canvas, seed uint64, t tree, moon box, frame int) {
 		case v > 0.6:
 			size = small
 		}
-		if t.inCrown(x, y, 1) || moon.contains(x, y, 1) {
+		if t.underCanopy(x, y, 1) || moon.contains(x, y, 1) {
 			continue
+		}
+		if size == big && (t.underCanopy(x-1, y, 1) || t.underCanopy(x+1, y, 1) || t.underCanopy(x, y+1, 1)) {
+			size = medium // its rays would reach into the tree
 		}
 		drawStar(c, x, y, size, phase, frame)
 	}
@@ -172,7 +183,7 @@ func drawShootingStar(c *canvas.Canvas, seed uint64, t tree, frame int) {
 	headX, headY := startX-2*step, startY+step/2
 	for i, glyph := range []rune{'✦', '·', '·', '.'} {
 		x, y := headX+2*i, headY-i/2
-		if t.inCrown(x, y, 0) {
+		if t.underCanopy(x, y, 0) {
 			continue
 		}
 		ink := canvas.InkStar

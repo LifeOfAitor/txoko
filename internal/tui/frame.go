@@ -42,7 +42,7 @@ func renderSpans(ss []span) string {
 //	╰──────────────────╯
 //
 // Every body line must already be exactly inner cells wide.
-func frame(inner int, title []span, body []string, footer string, t Theme) string {
+func frame(inner int, title []span, body []string, footer []string, t Theme) string {
 	b := t.Border.Render
 	var out strings.Builder
 
@@ -59,7 +59,9 @@ func frame(inner int, title []span, body []string, footer string, t Theme) strin
 	}
 
 	out.WriteString(b("├"+strings.Repeat("─", inner)+"┤") + "\n")
-	out.WriteString(b("│") + footer + b("│") + "\n")
+	for _, line := range footer {
+		out.WriteString(b("│") + line + b("│") + "\n")
+	}
 	out.WriteString(b("╰" + strings.Repeat("─", inner) + "╯"))
 	return out.String()
 }
@@ -85,6 +87,45 @@ func footerLine(inner int, layouts ...layout) string {
 		return " " + renderSpans(l.left) + strings.Repeat(" ", gap) + renderSpans(l.right) + " "
 	}
 	return strings.Repeat(" ", max(inner, 0))
+}
+
+// footerBlock lays out the footer: a status on the left and the key hints.
+// When everything fits on one line it uses one. Otherwise the status gets a
+// line of its own and the hints wrap onto as many lines as they need, so
+// every key is always listed. compact is a shorter status for very narrow
+// frames. Every returned line is exactly inner cells wide.
+func footerBlock(inner int, status, compact []span, hints [][]span) []string {
+	sep := span{text: "  "}
+	var all []span
+	for i, h := range hints {
+		if i > 0 {
+			all = append(all, sep)
+		}
+		all = append(all, h...)
+	}
+	if spansWidth(status)+spansWidth(all)+3 <= inner {
+		return []string{footerLine(inner, layout{status, all})}
+	}
+
+	lines := []string{footerLine(inner, layout{status, nil}, layout{compact, nil})}
+	var cur []span
+	flush := func() {
+		if len(cur) > 0 {
+			lines = append(lines, footerLine(inner, layout{cur, nil}))
+			cur = nil
+		}
+	}
+	for _, h := range hints {
+		if len(cur) > 0 && spansWidth(cur)+spansWidth(h)+len(sep.text)+2 > inner {
+			flush()
+		}
+		if len(cur) > 0 {
+			cur = append(cur, sep)
+		}
+		cur = append(cur, h...)
+	}
+	flush()
+	return lines
 }
 
 // progressBar renders a ▰▰▰▱▱ bar of n cells for a value between 0 and 1.
