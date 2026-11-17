@@ -77,3 +77,10 @@ func TestSceneSizeString(t *testing.T) {
 	}
 	_ = time.Now
 }
+
+func TestMiniFlag(t *testing.T) {
+	calls := fakeTUI(t, nil)
+	if code, _, stderr := run("--mini", "--work"); code != ExitOK || !(*calls)[0].Mini {
+		t.Errorf("--mini: exit %d %s", code, stderr)
+	}
+}

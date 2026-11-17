@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"os"
+	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
@@ -35,6 +36,9 @@ const (
 const (
 	minWidth  = 24
 	minHeight = 9
+	// --mini has no frame, so it fits in much smaller tmux corners.
+	miniMinWidth  = 12
+	miniMinHeight = 4
 )
 
 // Options configures a new Model. Zero values pick sensible defaults.
@@ -60,6 +64,10 @@ type Options struct {
 
 	Now   func() time.Time // clock; injected so tests control day, night and timers
 	Theme *Theme           // nil uses DefaultTheme
+
+	// Mini drops the frame and the cheat sheet for a small tmux corner: the
+	// scene and one status line, with ? to show the keys.
+	Mini bool
 }
 
 // skyMode decides whether the sky shows day or night.
@@ -93,6 +101,9 @@ type Model struct {
 	loaded  bool
 	loadErr error
 
+	mini     bool
+	showKeys bool // --mini: the cheat sheet is expanded
+
 	pomo        pomodoro
 	onFocusDone func(time.Duration) error
 	onBreakDone func()
@@ -116,6 +127,7 @@ func New(opts Options) Model {
 		source:  opts.Source,
 		refresh: opts.Refresh,
 
+		mini:        opts.Mini,
 		onFocusDone: opts.OnFocusDone,
 		onBreakDone: opts.OnBreakDone,
 	}
@@ -278,6 +290,8 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 	case "s":
 		m.scene = (m.scene + 1) % len(scenes)
+	case "?":
+		m.showKeys = !m.showKeys
 	case "r":
 		m.seed = nextSeed(m.seed)
 	case "space", "p":
@@ -342,22 +356,58 @@ func (m Model) render() string {
 	if m.width == 0 || m.height == 0 {
 		return "" // waiting for the first WindowSizeMsg
 	}
-	if m.width < minWidth || m.height < minHeight {
+	minW, minH := minWidth, minHeight
+	if m.mini {
+		minW, minH = miniMinWidth, miniMinHeight
+	}
+	if m.width < minW || m.height < minH {
 		msg := m.theme.Muted.Render("txoko needs a bit more room 🌱")
 		return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, msg)
+	}
+	if m.mini {
+		return m.renderMini()
 	}
 
 	inner := m.width - 2
 	footer := m.footer(inner)
 	// The scene fills what the borders, the title and the footer leave.
 	m.canvas.Resize(inner, max(1, m.height-3-len(footer)))
+	night := m.drawScene()
+	return frame(inner, m.title(night, inner), renderCanvas(m.canvas, m.theme), footer, m.theme)
+}
+
+// renderMini draws the scene edge to edge with a single status line below
+// it; ? expands that line into the full cheat sheet.
+func (m Model) renderMini() string {
+	status, compact, hints := m.footerParts()
+	var footer []string
+	if m.showKeys {
+		footer = footerBlock(m.width, status, compact, append(hints, m.hint("?", "hide keys")))
+	} else {
+		footer = []string{footerLine(m.width,
+			layout{status, m.hint("?", "keys")},
+			layout{compact, m.hint("?", "keys")},
+			layout{compact, nil},
+		)}
+	}
+	if len(footer) >= m.height {
+		// A tiny corner: the expanded keys take the whole space for now.
+		return strings.Join(footer[:m.height], "\n")
+	}
+	m.canvas.Resize(m.width, m.height-len(footer))
+	m.drawScene()
+	return strings.Join(append(renderCanvas(m.canvas, m.theme), footer...), "\n")
+}
+
+// drawScene paints the current scene onto the canvas and reports whether
+// it is night.
+func (m Model) drawScene() bool {
 	night := m.night()
 	scenes[m.scene].Draw(m.canvas, m.seed, scene.State{
 		Growth: m.growth, Frame: m.frame, Night: night, Season: m.currentSeason(),
 		MoonPhase: scene.MoonPhaseOf(m.now()),
 	})
-
-	return frame(inner, m.title(night, inner), renderCanvas(m.canvas, m.theme), footer, m.theme)
+	return night
 }
 
 // title builds the frame's title, dropping the least important parts until
@@ -401,8 +451,15 @@ func (m Model) hint(key, label string) []span {
 }
 
 func (m Model) footer(inner int) []string {
+	status, compact, hints := m.footerParts()
+	return footerBlock(inner, status, compact, hints)
+}
+
+// footerParts returns the footer's pieces: the status, a shorter status for
+// narrow spaces, and the key hints.
+func (m Model) footerParts() (status, compact []span, hints [][]span) {
 	if m.pomodoroOn() {
-		return m.pomodoroFooter(inner)
+		return m.pomodoroParts()
 	}
 	t := m.theme
 	filled, empty := progressBar(m.growth, 10)
@@ -411,10 +468,9 @@ func (m Model) footer(inner int) []string {
 		{empty, t.Muted},
 		{fmt.Sprintf(" %3.0f%%", m.growth*100), t.Accent},
 	}
-	status := append([]span{{"growth ", t.Muted}}, bar...)
+	status = append([]span{{"growth ", t.Muted}}, bar...)
 	status = append(status, m.status()...)
 
-	var hints [][]span
 	if !m.live() {
 		hints = append(hints, m.hint("+/-", "grow"))
 	}
@@ -426,7 +482,7 @@ func (m Model) footer(inner int) []string {
 		m.hint("space", "pause"),
 		m.hint("q", "quit"),
 	)
-	return footerBlock(inner, status, bar, hints)
+	return status, bar, hints
 }
 
 // status is the part of the footer that describes where growth comes from.

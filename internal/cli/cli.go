@@ -64,6 +64,8 @@ Flags:
                    (neofetch-style, for your .zshrc); full grown unless
                    --growth or --work say otherwise
       --size WxH   scene size for --once (default 34x14)
+      --mini       no frame, one status line: for a small tmux corner
+                   (press ? there to see the keys)
   -h, --help       show this help
   -v, --version    print version information
 
@@ -132,6 +134,7 @@ func runScene(args []string, stdout, stderr io.Writer) int {
 	size := sceneSize{w: tui.OnceWidth, h: tui.OnceHeight}
 	fs.BoolVar(&once, "once", false, "")
 	fs.Var(&size, "size", "")
+	fs.BoolVar(&opts.Mini, "mini", false, "")
 
 	if code, done := parse(fs, args, stdout, stderr); done {
 		return code
