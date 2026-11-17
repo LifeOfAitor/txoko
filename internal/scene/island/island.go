@@ -360,19 +360,8 @@ func drawWaterfall(c *canvas.Canvas, l layout, g float64, s scene.State) {
 // drawClouds lets a few clouds drift slowly past, above and below the
 // island.
 func drawClouds(c *canvas.Canvas, l layout, seed uint64, frame int) {
-	shapes := []string{".-~~-.", ".-~~~-.", ".-~-."}
-	rows := []int{1, l.top / 3, l.h - 2}
-	for i, row := range rows {
-		if row < 0 || row >= l.h || l.tiny {
-			continue
-		}
-		shape := shapes[i%len(shapes)]
-		speed := 14 + i*7
-		span := l.w + len(shape)
-		x := l.w - (frame/speed+int(nature.Noise(i, int(seed%997), 7)*float64(span)))%span
-		for dx, r := range shape {
-			c.SetIfEmpty(x+dx, row, r, canvas.InkCloud)
-		}
+	if !l.tiny {
+		nature.DrawClouds(c, seed, nil, []int{1, l.top / 3, l.h - 2}, frame)
 	}
 }
 

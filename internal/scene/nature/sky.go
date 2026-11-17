@@ -17,6 +17,16 @@ type Canopy interface {
 	Floor() int
 }
 
+// MoonFramer is an optional extra for a Canopy: a scene that wants the moon
+// somewhere other than the top right corner, say framed in an arch, tells
+// where. MoonFrame returns the column the disc is centered on, its top row
+// and the biggest radius that fits there; maxR < 2 means no room, and the
+// moon goes back to its corner. A framed moon hangs far behind the scene:
+// whatever the scene drew in front of it, a tree say, hides part of it.
+type MoonFramer interface {
+	MoonFrame() (cx, top, maxR int)
+}
+
 // DrawSky paints the night sky: the moon in the given phase, stars of four
 // sizes that twinkle at their own pace, and now and then a shooting star.
 // Everything stays above the canopy's silhouette.
@@ -59,7 +69,14 @@ func drawMoon(c *canvas.Canvas, t Canopy, phase float64) box {
 		}
 		return false
 	}
-	for r > 2 && touches(place(r)) {
+	framed := false
+	if f, ok := t.(MoonFramer); ok {
+		if cx, top, maxR := f.MoonFrame(); maxR >= 2 {
+			r, framed = min(maxR, 6), true
+			place = func(r int) box { return box{cx - r, top, cx + r - 1, top + r - 1} }
+		}
+	}
+	for !framed && r > 2 && touches(place(r)) {
 		r--
 	}
 	if w < 20 || r < 2 {
@@ -201,5 +218,27 @@ func drawShootingStar(c *canvas.Canvas, seed uint64, t Canopy, frame int) {
 			ink = canvas.InkStarBright
 		}
 		c.SetIfEmpty(x, y, glyph, ink)
+	}
+}
+
+// DrawClouds lets a cloud drift slowly across each of the given rows by
+// day, each at its own pace. They pass behind whatever the scene has drawn
+// and, if t isn't nil, behind its whole canopy, gaps and all.
+func DrawClouds(c *canvas.Canvas, seed uint64, t Canopy, rows []int, frame int) {
+	shapes := []string{".-~~-.", ".-~~~-.", ".-~-."}
+	w := c.Width()
+	for i, row := range rows {
+		if row < 0 || row >= c.Height() {
+			continue
+		}
+		shape := shapes[i%len(shapes)]
+		speed := 14 + i*7
+		span := w + len(shape)
+		x := w - (frame/speed+int(Noise(i, int(seed%997), 7)*float64(span)))%span
+		for dx, r := range shape {
+			if t == nil || !t.UnderCanopy(x+dx, row, 0) {
+				c.SetIfEmpty(x+dx, row, r, canvas.InkCloud)
+			}
+		}
 	}
 }

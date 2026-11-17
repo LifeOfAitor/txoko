@@ -105,3 +105,76 @@ func TestBoxContains(t *testing.T) {
 		t.Error("box.contains is wrong")
 	}
 }
+
+// flat is a canopy with nothing but ground below row floor and, if set, a
+// spot where the moon should hang.
+type flat struct {
+	floor         int
+	cx, top, maxR int
+	solidFromX    int // columns from here on are solid, like a wall
+}
+
+func (f flat) UnderCanopy(x, y, margin int) bool {
+	return y >= f.floor-margin || f.solidFromX > 0 && x >= f.solidFromX
+}
+func (f flat) Floor() int { return f.floor }
+
+type framed struct{ flat }
+
+func (f framed) MoonFrame() (int, int, int) { return f.cx, f.top, f.maxR }
+
+func moonCells(c *canvas.Canvas) (minX, maxX, minY int, n int) {
+	minX, minY = c.Width(), c.Height()
+	for y := range c.Height() {
+		for x, cell := range c.Row(y) {
+			if cell.Ink == canvas.InkMoon || cell.Ink == canvas.InkMoonDark {
+				minX, maxX, minY, n = min(minX, x), max(maxX, x), min(minY, y), n+1
+			}
+		}
+	}
+	return minX, maxX, minY, n
+}
+
+// TestMoonFramer: a scene can hang the moon where it likes; with no room
+// it goes back to the top right corner.
+func TestMoonFramer(t *testing.T) {
+	c := canvas.New(60, 20)
+	DrawSky(c, 1, framed{flat{floor: 18, cx: 20, top: 6, maxR: 3}}, 0.5, 0)
+	if minX, maxX, minY, n := moonCells(c); n == 0 || minX < 17 || maxX > 22 || minY != 6 {
+		t.Errorf("framed moon at x %d..%d, y %d (%d cells)", minX, maxX, minY, n)
+	}
+
+	c = canvas.New(60, 20)
+	DrawSky(c, 1, framed{flat{floor: 18, maxR: 1}}, 0.5, 0)
+	if minX, _, _, n := moonCells(c); n == 0 || minX < 40 {
+		t.Errorf("with no room the moon belongs in the corner, found it from x %d", minX)
+	}
+}
+
+// TestCloudsPassBehind: clouds never cover the canopy; without one they
+// drift across the whole sky.
+func TestCloudsPassBehind(t *testing.T) {
+	sky := flat{floor: 18, solidFromX: 30}
+	covered := func(t Canopy, f int) (n int) {
+		c := canvas.New(60, 20)
+		DrawClouds(c, 1, t, []int{1, 5, 19}, f)
+		for y := range c.Height() {
+			for x, cell := range c.Row(y) {
+				if cell.Ink == canvas.InkCloud && sky.UnderCanopy(x, y, 0) {
+					n++
+				}
+			}
+		}
+		return n
+	}
+	free := 0
+	for f := 0; f < 600; f += 37 {
+		if n := covered(sky, f); n != 0 {
+			t.Fatalf("frame %d: %d cloud cells on the canopy", f, n)
+		}
+		free += covered(nil, f)
+	}
+	if free == 0 {
+		t.Error("with no canopy, clouds should drift everywhere")
+	}
+}
