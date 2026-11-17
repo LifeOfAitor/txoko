@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/LifeOfAitor/txoko/internal/notify"
 	"github.com/LifeOfAitor/txoko/internal/progress"
 	"github.com/LifeOfAitor/txoko/internal/store"
 	"github.com/LifeOfAitor/txoko/internal/tui"
@@ -34,6 +35,7 @@ const usageTemplate = `txoko — a cozy corner for your terminal that grows as y
 Usage:
   txoko [flags]            open your scene and grow it by hand with +/-
   txoko --work [flags]     let your real activity grow it instead
+  txoko --pomodoro 50      focus for 50 minutes while a new tree grows
   txoko <command>
 
 Commands (for --work):
@@ -48,7 +50,9 @@ Flags:
       --scene S    scene to show: %s (default %s)
       --seed N     scene layout; the default is unique to this machine
       --growth N   starting growth, 0 to 1 (default 0.4)
-      --work       grow from your recorded activity (commits)
+      --work       grow from your recorded activity (commits and focus)
+      --pomodoro M focus session of M minutes: the tree blooms as it ends
+      --break M    rest M minutes after the session (with --pomodoro)
   -h, --help       show this help
   -v, --version    print version information
 
@@ -67,6 +71,7 @@ var (
 	executable = os.Executable
 	workDir    = os.Getwd
 	now        = time.Now
+	notifySend = notify.Send
 )
 
 // Run executes txoko with the given arguments (without the program name)
@@ -105,6 +110,9 @@ func runScene(args []string, stdout, stderr io.Writer) int {
 	fs.Float64Var(&opts.Growth, "growth", tui.DefaultGrowth, "")
 	fs.Uint64Var(&opts.Seed, "seed", 0, "")
 	fs.StringVar(&opts.Scene, "scene", "", "")
+	var focusMin, breakMin int
+	fs.IntVar(&focusMin, "pomodoro", 0, "")
+	fs.IntVar(&breakMin, "break", 0, "")
 
 	if code, done := parse(fs, args, stdout, stderr); done {
 		return code
@@ -127,6 +135,17 @@ func runScene(args []string, stdout, stderr io.Writer) int {
 	if work && flagSet(fs, "growth") {
 		return usageError(stderr, "--growth sets the scene by hand, so it can't be combined with --work")
 	}
+	if msg := checkPomodoro(fs, focusMin, breakMin, work); msg != "" {
+		return usageError(stderr, msg)
+	}
+	if focusMin > 0 {
+		opts.Focus = time.Duration(focusMin) * time.Minute
+		opts.Break = time.Duration(breakMin) * time.Minute
+		opts.OnFocusDone = recordFocus
+		opts.OnBreakDone = func() {
+			_ = notifySend("txoko", "Break's over — press enter to plant another tree.")
+		}
+	}
 
 	// By default txoko is a visual toy you shape yourself; --work hands the
 	// growth over to your recorded activity.
@@ -143,6 +162,49 @@ func runScene(args []string, stdout, stderr io.Writer) int {
 		return fail(stderr, err)
 	}
 	return ExitOK
+}
+
+// checkPomodoro validates the pomodoro flags. It returns a usage message,
+// or "" when they are fine.
+func checkPomodoro(fs *flag.FlagSet, focusMin, breakMin int, work bool) string {
+	switch {
+	case !flagSet(fs, "pomodoro"):
+		if flagSet(fs, "break") {
+			return "--break only works together with --pomodoro"
+		}
+		return ""
+	case focusMin < 1 || focusMin > 240:
+		return fmt.Sprintf("--pomodoro takes minutes between 1 and 240, got %d", focusMin)
+	case breakMin < 0 || breakMin > 120:
+		return fmt.Sprintf("--break takes minutes between 0 and 120, got %d", breakMin)
+	case work:
+		return "--pomodoro grows its own tree, so it can't be combined with --work"
+	case flagSet(fs, "growth"):
+		return "--pomodoro starts from a seed, so it can't be combined with --growth"
+	}
+	return ""
+}
+
+// recordFocus saves a completed focus session, so it also grows the --work
+// scene, and lets you know it's done.
+func recordFocus(length time.Duration) error {
+	minutes := int(length / time.Minute)
+	_ = notifySend("txoko", fmt.Sprintf("%s of focus — your tree is in full bloom 🌳", plural(minutes, "minute")))
+
+	st, err := openStore()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = st.Close() }()
+	at := now()
+	_, err = st.Add(context.Background(), store.Event{
+		Kind:   store.KindFocus,
+		Repo:   "pomodoro",
+		Ref:    fmt.Sprintf("focus-%d", at.UnixNano()),
+		At:     at,
+		Amount: float64(minutes),
+	})
+	return err
 }
 
 // summarize reads the recent events and computes what the scene shows.

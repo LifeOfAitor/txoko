@@ -76,6 +76,15 @@ txoko is a visual toy first: by default you decide how grown the scene is. If yo
 
 Make a commit in any repository and watch the tree grow a little within a few seconds.
 
+### Focus sessions 🍅
+
+```sh
+txoko --pomodoro 50               # a new tree grows from a seed to full bloom in 50 minutes
+txoko --pomodoro 25 --break 5     # classic pomodoro with a 5-minute rest
+```
+
+The footer counts down, <kbd>space</kbd> pauses (paused time doesn't count), and quitting mid-session asks twice so a stray <kbd>q</kbd> never throws away your focus. When the time is up you get a desktop notification, the tree is in full bloom, and <kbd>enter</kbd> plants another one. Completed sessions are saved too, so they also grow your `--work` scene: 25 minutes of focus count like one commit.
+
 ```
 ╭─ txoko · bonsai · night · paused ──────────────────────────────────────╮
 │                                                ·                    ☾  │
@@ -120,6 +129,7 @@ Flags: `--scene bonsai|garden` picks the scene, `--seed N` picks a layout (by de
 |---|---|
 | `txoko` | open your scene and grow it by hand |
 | `txoko --work` | open your scene, grown by your real activity |
+| `txoko --pomodoro M [--break M]` | focus session: a new tree blooms as the minutes pass |
 | `txoko hook install` | record every commit through a global git hook |
 | `txoko hook uninstall` | remove the hook (your history is kept) |
 | `txoko hook status` | check whether the hook is installed |
@@ -128,7 +138,7 @@ Flags: `--scene bonsai|garden` picks the scene, `--seed N` picks a layout (by de
 
 ### How your activity becomes growth (`--work`)
 
-- **Every commit adds a point.** Points fade with a two-week half-life, so the tree reflects your recent rhythm: keep going and it stays lush, take a break and it slowly thins out — it never dies.
+- **Every commit adds a point**, and so does every 25 minutes of completed pomodoro focus. Points fade with a two-week half-life, so the tree reflects your recent rhythm: keep going and it stays lush, take a break and it slowly thins out — it never dies.
 - **Growth eases in:** `growth = 1 − e^(−points / 25)`. Your first commits make a big difference; about three a day keeps the tree near 90%.
 - **Streak** counts consecutive days with at least one commit, and stays alive until the day ends.
 

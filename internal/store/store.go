@@ -26,14 +26,16 @@ type Kind string
 // Kinds of events txoko records.
 const (
 	KindCommit Kind = "commit"
+	KindFocus  Kind = "focus" // a completed pomodoro session
 )
 
 // Event is one piece of activity.
 type Event struct {
-	Kind Kind
-	Repo string    // repository name
-	Ref  string    // unique id within its kind, e.g. a commit hash
-	At   time.Time // when it happened
+	Kind   Kind
+	Repo   string    // repository name, or a label such as "pomodoro"
+	Ref    string    // unique id within its kind, e.g. a commit hash
+	At     time.Time // when it happened
+	Amount float64   // size in the kind's unit (focus: minutes); 0 means 1
 }
 
 // Store is an open activity database.
@@ -137,9 +139,12 @@ func (s *Store) Add(ctx context.Context, e Event) (bool, error) {
 	if e.Kind == "" || e.Repo == "" || e.Ref == "" || e.At.IsZero() {
 		return false, ErrInvalidEvent
 	}
+	if e.Amount == 0 {
+		e.Amount = 1
+	}
 	res, err := s.db.ExecContext(ctx,
-		"INSERT OR IGNORE INTO events (kind, repo, ref, at) VALUES (?, ?, ?, ?)",
-		string(e.Kind), e.Repo, e.Ref, e.At.Unix())
+		"INSERT OR IGNORE INTO events (kind, repo, ref, at, amount) VALUES (?, ?, ?, ?, ?)",
+		string(e.Kind), e.Repo, e.Ref, e.At.Unix(), e.Amount)
 	if err != nil {
 		return false, fmt.Errorf("adding event: %w", err)
 	}
@@ -153,7 +158,7 @@ func (s *Store) Add(ctx context.Context, e Event) (bool, error) {
 // Since returns every event at or after t, oldest first.
 func (s *Store) Since(ctx context.Context, t time.Time) ([]Event, error) {
 	rows, err := s.db.QueryContext(ctx,
-		"SELECT kind, repo, ref, at FROM events WHERE at >= ? ORDER BY at, id", t.Unix())
+		"SELECT kind, repo, ref, at, amount FROM events WHERE at >= ? ORDER BY at, id", t.Unix())
 	if err != nil {
 		return nil, fmt.Errorf("reading events: %w", err)
 	}
@@ -166,7 +171,7 @@ func (s *Store) Since(ctx context.Context, t time.Time) ([]Event, error) {
 			kind string
 			at   int64
 		)
-		if err := rows.Scan(&kind, &e.Repo, &e.Ref, &at); err != nil {
+		if err := rows.Scan(&kind, &e.Repo, &e.Ref, &at, &e.Amount); err != nil {
 			return nil, err
 		}
 		e.Kind, e.At = Kind(kind), time.Unix(at, 0)

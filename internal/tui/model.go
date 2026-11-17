@@ -47,9 +47,18 @@ type Options struct {
 	// Source reads the real activity summary (txoko --work). When nil the
 	// UI runs in manual mode, where +/- set the growth by hand.
 	Source  func() (progress.Summary, error)
-	Refresh time.Duration    // how often Source is read again
-	Now     func() time.Time // clock; injected so tests control day and night
-	Theme   *Theme           // nil uses DefaultTheme
+	Refresh time.Duration // how often Source is read again
+
+	// Focus starts a pomodoro session of this length: the scene grows from
+	// a seed to full bloom as the minutes pass. Break adds a rest after it.
+	Focus, Break time.Duration
+	// OnFocusDone runs (outside the UI loop) when a session completes, to
+	// record it and notify. OnBreakDone runs when the break is over.
+	OnFocusDone func(length time.Duration) error
+	OnBreakDone func()
+
+	Now   func() time.Time // clock; injected so tests control day, night and timers
+	Theme *Theme           // nil uses DefaultTheme
 }
 
 // skyMode decides whether the sky shows day or night.
@@ -79,6 +88,10 @@ type Model struct {
 	loaded  bool
 	loadErr error
 
+	pomo        pomodoro
+	onFocusDone func(time.Duration) error
+	onBreakDone func()
+
 	width, height int
 
 	now    func() time.Time
@@ -97,6 +110,9 @@ func New(opts Options) Model {
 		canvas:  canvas.New(0, 0),
 		source:  opts.Source,
 		refresh: opts.Refresh,
+
+		onFocusDone: opts.OnFocusDone,
+		onBreakDone: opts.OnBreakDone,
 	}
 	if m.live() {
 		m.growth = 0 // the scene grows in from a seed when it opens
@@ -117,6 +133,10 @@ func New(opts Options) Model {
 		m.theme = *opts.Theme
 	}
 	m.scene, _ = sceneIndex(opts.Scene) // unknown names fall back to the default
+	if opts.Focus > 0 {
+		m.pomo = pomodoro{phase: phaseFocus, focus: opts.Focus, brk: opts.Break, left: opts.Focus, last: m.now()}
+		m.growth = 0
+	}
 	return m
 }
 
@@ -179,13 +199,25 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		m.frame++
-		if m.live() {
+		var phaseCmd tea.Cmd
+		if m.pomodoroOn() {
+			m, phaseCmd = m.advance()
+			m.target = m.pomoTarget()
+		}
+		if m.live() || m.pomodoroOn() {
 			m.growth += (m.target - m.growth) * easing
 			if abs(m.target-m.growth) < 0.001 {
 				m.growth = m.target
 			}
 		}
+		if phaseCmd != nil {
+			return m, tea.Batch(m.tick(), phaseCmd)
+		}
 		return m, m.tick()
+
+	case focusSavedMsg:
+		m.pomo.saveErr = msg.err
+		return m, nil
 
 	case summaryMsg:
 		m.loaded, m.loadErr = true, msg.err
@@ -209,6 +241,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	if m.pomodoroOn() {
+		next, cmd, handled := m.handlePomodoroKey(msg.String())
+		if handled {
+			return next, cmd
+		}
+		m = next
+	}
 	switch msg.String() {
 	case "q", "esc", "ctrl+c":
 		return m, tea.Quit
@@ -230,6 +269,7 @@ func (m Model) handleKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.paused = !m.paused
 		if !m.paused {
 			m.tickID++
+			m.pomo.last = m.now() // paused time doesn't count toward the session
 			return m, m.tick()
 		}
 	}
@@ -282,6 +322,12 @@ func (m Model) title(night bool) []span {
 		{"txoko", t.Title},
 		{" · " + scenes[m.scene].Name() + " · " + sky, t.Muted},
 	}
+	switch m.pomo.phase {
+	case phaseFocus:
+		title = append(title, span{" · focus", t.Accent})
+	case phaseBreak:
+		title = append(title, span{" · break", t.Accent})
+	}
 	if m.paused {
 		title = append(title, span{" · paused", t.Accent})
 	}
@@ -289,6 +335,9 @@ func (m Model) title(night bool) []span {
 }
 
 func (m Model) footer(inner int) string {
+	if m.pomodoroOn() {
+		return m.pomodoroFooter(inner)
+	}
 	t := m.theme
 	filled, empty := progressBar(m.growth, 10)
 	bar := []span{

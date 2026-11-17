@@ -3,7 +3,8 @@
 //
 // The growth model is meant to feel alive rather than to keep score:
 //
-//   - every commit adds one point;
+//   - every commit adds one point, and every 25 minutes of completed
+//     pomodoro focus add one more;
 //   - points fade with a half-life of two weeks, so the tree reflects your
 //     recent rhythm — keep going and it stays lush, take a break and it
 //     slowly thins out (it never dies);
@@ -26,21 +27,38 @@ const (
 	Scale    = 25.0                // points for ~63% growth
 	Window   = 120 * 24 * time.Hour
 	// Window is how far back events matter: older ones weigh under 0.3%.
+
+	// FocusMinutesPerPoint makes a classic 25-minute pomodoro worth one
+	// commit.
+	FocusMinutesPerPoint = 25.0
 )
 
 // Summary is what the UI shows.
 type Summary struct {
-	Growth float64 // 0..1
-	Today  int     // commits since local midnight
-	Streak int     // consecutive days with at least one commit
-	Recent int     // commits inside Window
+	Growth     float64 // 0..1
+	Today      int     // commits since local midnight
+	FocusToday int     // minutes of completed focus since local midnight
+	Streak     int     // consecutive days with any activity
+	Recent     int     // events inside Window
+}
+
+// points is how much an event feeds growth when fresh.
+func points(e store.Event) float64 {
+	amount := e.Amount
+	if amount == 0 {
+		amount = 1
+	}
+	if e.Kind == store.KindFocus {
+		return amount / FocusMinutesPerPoint
+	}
+	return amount
 }
 
 // Compute summarizes events as of now. Days follow now's time zone.
 func Compute(events []store.Event, now time.Time) Summary {
 	var (
 		s      Summary
-		points float64
+		total  float64
 		days   = map[civilDay]bool{}
 		today  = dayOf(now)
 		cutoff = now.Add(-Window)
@@ -51,16 +69,22 @@ func Compute(events []store.Event, now time.Time) Summary {
 		}
 		s.Recent++
 		age := now.Sub(e.At)
-		points += math.Exp2(-float64(age) / float64(HalfLife))
+		total += points(e) * math.Exp2(-float64(age)/float64(HalfLife))
 
 		d := dayOf(e.At.In(now.Location()))
 		days[d] = true
-		if d == today {
+		if d != today {
+			continue
+		}
+		switch e.Kind {
+		case store.KindFocus:
+			s.FocusToday += int(math.Round(e.Amount))
+		default:
 			s.Today++
 		}
 	}
 
-	s.Growth = 1 - math.Exp(-points/Scale)
+	s.Growth = 1 - math.Exp(-total/Scale)
 
 	// A streak is still alive today even before today's first commit.
 	day := today

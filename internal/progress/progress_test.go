@@ -112,6 +112,33 @@ func TestGrowthFadesWithTime(t *testing.T) {
 	}
 }
 
+func TestFocusSessions(t *testing.T) {
+	focus := func(at time.Time, minutes float64) store.Event {
+		return store.Event{Kind: store.KindFocus, Repo: "pomodoro", Ref: at.String(), At: at, Amount: minutes}
+	}
+	events := []store.Event{focus(daysAgo(0, 10), 50), focus(daysAgo(0, 15), 25), focus(daysAgo(1, 10), 25)}
+	s := Compute(events, now)
+	if s.FocusToday != 75 || s.Today != 0 {
+		t.Errorf("FocusToday = %d, Today = %d; want 75 and 0", s.FocusToday, s.Today)
+	}
+	if s.Streak != 2 {
+		t.Errorf("focus days should keep the streak: %d", s.Streak)
+	}
+	// A fresh 25-minute session is worth exactly one fresh commit.
+	pomo := Compute([]store.Event{focus(now, 25)}, now).Growth
+	commit := Compute(commitsAt(now), now).Growth
+	if math.Abs(pomo-commit) > 1e-9 {
+		t.Errorf("25 min of focus = %v growth, one commit = %v", pomo, commit)
+	}
+}
+
+func TestZeroAmountCountsAsOne(t *testing.T) {
+	e := store.Event{Kind: store.KindCommit, At: now}
+	if points(e) != 1 {
+		t.Errorf("points = %v, want 1", points(e))
+	}
+}
+
 func TestFutureEventsIgnored(t *testing.T) {
 	s := Compute(commitsAt(now.Add(time.Hour)), now)
 	if s.Recent != 0 || s.Growth != 0 {

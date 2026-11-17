@@ -26,6 +26,9 @@ func TestMain(m *testing.M) {
 	} {
 		_ = os.Setenv(k, v)
 	}
+	// Never pop up real desktop notifications from tests.
+	notifySend = func(string, string) error { return nil }
+
 	code := m.Run()
 	_ = os.RemoveAll(tmp)
 	os.Exit(code)

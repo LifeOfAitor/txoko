@@ -118,7 +118,7 @@ func TestLogCommit(t *testing.T) {
 	if _, stdout, _ := run("log", "commit"); !strings.Contains(stdout, "already recorded") {
 		t.Errorf("second log should be a no-op, got %q", stdout)
 	}
-	if _, stdout, _ := run("stats"); !strings.Contains(stdout, "today   1 commit\n") {
+	if _, stdout, _ := run("stats"); !strings.Contains(stdout, "today   1 commit, 0 min of focus\n") {
 		t.Errorf("stats after one commit:\n%s", stdout)
 	}
 }
@@ -191,7 +191,7 @@ func TestImportErrors(t *testing.T) {
 func TestStats(t *testing.T) {
 	freshDB(t)
 	_, stdout, _ := run("stats")
-	for _, want := range []string{"txoko · stats", "growth  ▱▱▱▱▱▱▱▱▱▱   0%", "today   0 commits", "streak  0 days", "recent  0 commits in the last 120 days"} {
+	for _, want := range []string{"txoko · stats", "growth  ▱▱▱▱▱▱▱▱▱▱   0%", "today   0 commits, 0 min of focus", "streak  0 days", "recent  0 commits in the last 120 days"} {
 		if !strings.Contains(stdout, want) {
 			t.Errorf("stats missing %q:\n%s", want, stdout)
 		}

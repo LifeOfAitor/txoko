@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"path/filepath"
 	"sync"
@@ -43,6 +44,53 @@ func TestAddAndSince(t *testing.T) {
 	}
 	if !got[0].At.Equal(base.Add(time.Hour)) || got[0].Kind != KindCommit || got[0].Repo != "txoko" {
 		t.Errorf("event round-trip mismatch: %+v", got[0])
+	}
+}
+
+func TestAmount(t *testing.T) {
+	ctx := context.Background()
+	s := open(t)
+	at := time.Now()
+	if _, err := s.Add(ctx, commit("default", at)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Add(ctx, Event{Kind: KindFocus, Repo: "pomodoro", Ref: "f1", At: at, Amount: 50}); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := s.Since(ctx, at.Add(-time.Minute))
+	if len(got) != 2 || got[0].Amount != 1 || got[1].Amount != 50 || got[1].Kind != KindFocus {
+		t.Errorf("amounts = %+v", got)
+	}
+}
+
+// TestUpgradeFromVersion1 opens a database created before migration 002:
+// its rows must survive and become commits worth 1.
+func TestUpgradeFromVersion1(t *testing.T) {
+	ctx := context.Background()
+	path := filepath.Join(t.TempDir(), "old.db")
+	old, err := sql.Open("sqlite", "file:"+path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	v1, _ := migrations.ReadFile("migrations/001_events.sql")
+	for _, q := range []string{
+		string(v1), "PRAGMA user_version = 1",
+		"INSERT INTO events (kind, repo, ref, at) VALUES ('commit', 'r', 'old', 100)",
+	} {
+		if _, err := old.Exec(q); err != nil {
+			t.Fatal(err)
+		}
+	}
+	_ = old.Close()
+
+	s, err := Open(ctx, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = s.Close() }()
+	got, err := s.Since(ctx, time.Unix(0, 0))
+	if err != nil || len(got) != 1 || got[0].Ref != "old" || got[0].Amount != 1 {
+		t.Errorf("after upgrade: %+v, %v", got, err)
 	}
 }
 
@@ -101,8 +149,8 @@ func TestReopenKeepsDataAndSchema(t *testing.T) {
 		t.Errorf("Count after reopen = %d, want 1", n)
 	}
 	var version int
-	if err := s.db.QueryRow("PRAGMA user_version").Scan(&version); err != nil || version != 1 {
-		t.Errorf("user_version = %d, %v; want 1", version, err)
+	if err := s.db.QueryRow("PRAGMA user_version").Scan(&version); err != nil || version != 2 {
+		t.Errorf("user_version = %d, %v; want 2", version, err)
 	}
 }
 
