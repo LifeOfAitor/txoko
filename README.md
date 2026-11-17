@@ -42,6 +42,19 @@
   </tr>
 </table>
 
+## Scenes
+
+Press <kbd>s</kbd> to switch, or start one with `--scene`. They all grow, change with the seasons and share the same night sky.
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/scene-island.png" alt="A floating island on a summer day, with a tree, grass, roots hanging below, a waterfall pouring off its edge, clouds and birds" width="400"><br><sub>🏝️ <b>island</b> · roots dangle, a waterfall starts to flow, birds come by</sub></td>
+    <td align="center"><img src="docs/images/scene-arch.png" alt="A ruined stone wall with an arch on an autumn night: red ivy frames the arch, and through it a young tree with the full moon behind it" width="400"><br><sub>🏛️ <b>arch</b> · ivy and moss take over the stone, the moon framed at night</sub></td>
+  </tr>
+</table>
+
+There's also the flagship **bonsai** and a small **garden**.
+
 <sub>Screenshots use the Catppuccin Frappé theme; txoko takes its colors from yours.</sub>
 
 ## Install
@@ -203,7 +216,7 @@ A typo such as `sene = "bonsai"` is reported instead of silently ignored.
 - [x] **2 · Real activity** — git hooks and a local SQLite store
 - [x] **3 · Everywhere** — neofetch-style greeting, tmux status line and a settings file
 - [x] **4 · First release** — `brew install` via a Homebrew tap
-- [ ] **5 · More scenes** — landscapes that grow, plus custom scenes from config
+- [x] **5 · More scenes** — a floating island and a forgotten arch
 - [ ] **6 · Your year** — a landscape built from your GitHub contribution calendar
 - [ ] **7 · Activity daemon** — active-time tracking as a background service
 - [ ] **8 · MCP server** — ask your AI assistant about your progress
