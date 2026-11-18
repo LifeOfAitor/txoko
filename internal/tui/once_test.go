@@ -45,6 +45,10 @@ func TestOnceInfo(t *testing.T) {
 	if strings.Contains(once(t, OnceOptions{Growth: 1}), "streak") {
 		t.Error("without a summary there should be no activity lines")
 	}
+	active := once(t, OnceOptions{Growth: 1, Summary: &progress.Summary{Today: 2, ActiveToday: 130}})
+	if !strings.Contains(active, "2 commits · 2h10 active") {
+		t.Errorf("active time missing:\n%s", active)
+	}
 	focus := once(t, OnceOptions{Growth: 1, Summary: &progress.Summary{FocusToday: 25}})
 	if !strings.Contains(focus, "0 commits · 25 min focus") {
 		t.Errorf("focus minutes missing:\n%s", focus)

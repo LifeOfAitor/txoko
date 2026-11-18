@@ -31,6 +31,7 @@ That's all you need. Every key is listed at the bottom of the screen; press <kbd
 |---|---|---|
 | 🌱 | **[Grow it by hand](#grow-it-by-hand)** | a calm toy: shape the tree, flip the season, call the night |
 | 📈 | **[Let your work grow it](#let-your-work-grow-it)** | every commit makes it a little fuller |
+| ⌨️ | **[Count your time at the computer](#count-your-time-at-the-computer)** | it grows on days without commits too |
 | 🍅 | **[Focus sessions](#focus-sessions)** | a new tree blooms as your pomodoro runs |
 | 👋 | **[A greeting in your shell](#a-greeting-in-your-shell)** | a neofetch-style scene each time you open a terminal |
 | 🪟 | **[A corner of tmux](#a-corner-of-tmux)** | a narrow pane that keeps growing while you work |
@@ -147,6 +148,20 @@ txoko hook uninstall        # remove it again (your history is kept)
 
 Take a few days off and the tree slowly thins out, but it never dies.
 
+### Count your time at the computer
+
+Not all work ends in a commit: writing, designing, studying, meetings. Turn on active time and the hours you spend at the computer grow the tree too.
+
+```sh
+txoko daemon install     # starts a tiny background service, now and whenever you log in
+txoko daemon status      # ✓ running — 2h10 at the computer today
+txoko daemon uninstall   # turn it off again (your history is kept)
+```
+
+Once a minute it asks the system how long ago you last touched the keyboard or the mouse; if it was within two minutes, that minute counts. **An hour at the computer grows the tree as much as one commit**, so a working day keeps it healthy while commits and focus sessions still weigh more. Nothing else is recorded: not which apps you use, not what you type.
+
+It runs on macOS (launchd) and on Linux with systemd and `xprintidle` (X11).
+
 ### Focus sessions
 
 ```sh
@@ -197,6 +212,7 @@ set -g status-right '#(txoko status) '
 | `{bar}` | ▰▰▰▰▱ | the same, as a little bar |
 | `{today}` | 3 | today's commits |
 | `{focus}` | 50 | today's minutes of focus |
+| `{active}` | 2h10 | today's time at the computer (with `txoko daemon`) |
 | `{streak}` | 2 | days in a row with any activity |
 | `{season}` | autumn | the season's name |
 
@@ -261,6 +277,9 @@ A typo such as `sene = "bonsai"` is reported instead of silently ignored.
 | `txoko hook status` | check whether the hook is installed | `txoko hook status` |
 | `txoko hook uninstall` | remove the hook (your history is kept) | `txoko hook uninstall` |
 | `txoko import [dir...]` | import your recent commits (30 days, or `--days N`) | `txoko import --days 90 ~/code/*` |
+| `txoko daemon install` | let your time at the computer grow it too | `txoko daemon install` |
+| `txoko daemon status` | check it's running, and see today's active time | `txoko daemon status` |
+| `txoko daemon uninstall` | stop it (your history is kept) | `txoko daemon uninstall` |
 | `txoko config` | show where the settings file is, and check it | `txoko config` |
 | `txoko config init` | create it, with every setting explained | `txoko config init` |
 
@@ -289,7 +308,7 @@ A typo such as `sene = "bonsai"` is reported instead of silently ignored.
 
 **Your activity** (`--work`):
 
-- Every commit adds a point, and so does every 25 minutes of completed focus. Points fade with a two-week half-life, so the tree reflects your recent rhythm.
+- Every commit adds a point, and so does every 25 minutes of completed focus and every hour at the computer (with `txoko daemon`). Points fade with a two-week half-life, so the tree reflects your recent rhythm.
 - `growth = 1 − e^(−points / 25)`: your first commits make a big difference, and about three a day keep the tree near 90%.
 - The streak counts consecutive days with any activity, and stays alive until the day ends.
 
@@ -300,6 +319,7 @@ A typo such as `sene = "bonsai"` is reported instead of silently ignored.
 - The hook points git's global `core.hooksPath` at `~/.config/txoko/hooks`. It **refuses** to replace a `core.hooksPath` you already set, and passes every hook through to each repository's own `.git/hooks`, so existing hooks keep working.
 - Commits are recorded in the background: committing never gets slower.
 - Repositories that set their own local `core.hooksPath` (Husky, for example) bypass global hooks; use `txoko import` for those.
+- The active-time service only stores how many minutes you were at the computer each hour. It asks the system for the idle time, the same way screen savers do, and needs no special permissions. It lives in `~/Library/LaunchAgents` on macOS or `~/.config/systemd/user` on Linux, and `txoko daemon uninstall` removes it.
 
 ## Roadmap
 
@@ -310,7 +330,7 @@ A typo such as `sene = "bonsai"` is reported instead of silently ignored.
 - [x] **4 · First release** — `brew install` via a Homebrew tap
 - [x] **5 · More scenes** — a floating island and a forgotten arch
 - [x] **6 · Share it** — `txoko snap` saves your scene as an SVG picture
-- [ ] **7 · Active time** — a small background service, so time at your desk grows the tree too, not only commits
+- [x] **7 · Active time** — a small background service, so time at your desk grows the tree too, not only commits
 
 Ideas and feedback are welcome in the [issues](https://github.com/LifeOfAitor/txoko/issues).
 

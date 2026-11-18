@@ -10,13 +10,14 @@ import (
 )
 
 func TestFormatStatus(t *testing.T) {
-	s := progress.Summary{Growth: 0.72, Today: 3, FocusToday: 50, Streak: 5}
+	s := progress.Summary{Growth: 0.72, Today: 3, FocusToday: 50, ActiveToday: 130, Streak: 5}
 	tests := []struct {
 		format, want string
 	}{
 		{DefaultStatusFormat, "🍂 72% · 5d"},
 		{"{bar} {today}c {focus}m", "▰▰▰▰▱ 3c 50m"}, // 72% of 5 cells rounds to 4
 		{"{season}", "autumn"},
+		{"⌨ {active}", "⌨ 2h10"},
 		{"no placeholders", "no placeholders"},
 		{"{growth}{growth}", "7272"},
 	}

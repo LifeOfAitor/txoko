@@ -3,8 +3,8 @@
 //
 // The growth model is meant to feel alive rather than to keep score:
 //
-//   - every commit adds one point, and every 25 minutes of completed
-//     pomodoro focus add one more;
+//   - every commit adds one point, every 25 minutes of completed pomodoro
+//     focus add one more, and so does every hour at the computer;
 //   - points fade with a half-life of two weeks, so the tree reflects your
 //     recent rhythm — keep going and it stays lush, take a break and it
 //     slowly thins out (it never dies);
@@ -15,6 +15,7 @@
 package progress
 
 import (
+	"fmt"
 	"math"
 	"time"
 
@@ -31,15 +32,20 @@ const (
 	// FocusMinutesPerPoint makes a classic 25-minute pomodoro worth one
 	// commit.
 	FocusMinutesPerPoint = 25.0
+
+	// ActiveMinutesPerPoint makes an hour at the computer worth one commit:
+	// a working day keeps the tree healthy, without outweighing commits.
+	ActiveMinutesPerPoint = 60.0
 )
 
 // Summary is what the UI shows.
 type Summary struct {
-	Growth     float64 // 0..1
-	Today      int     // commits since local midnight
-	FocusToday int     // minutes of completed focus since local midnight
-	Streak     int     // consecutive days with any activity
-	Recent     int     // events inside Window
+	Growth      float64 // 0..1
+	Today       int     // commits since local midnight
+	FocusToday  int     // minutes of completed focus since local midnight
+	ActiveToday int     // minutes at the computer since local midnight
+	Streak      int     // consecutive days with any activity
+	Recent      int     // events inside Window
 }
 
 // points is how much an event feeds growth when fresh.
@@ -48,8 +54,11 @@ func points(e store.Event) float64 {
 	if amount == 0 {
 		amount = 1
 	}
-	if e.Kind == store.KindFocus {
+	switch e.Kind {
+	case store.KindFocus:
 		return amount / FocusMinutesPerPoint
+	case store.KindActive:
+		return amount / ActiveMinutesPerPoint
 	}
 	return amount
 }
@@ -79,6 +88,8 @@ func Compute(events []store.Event, now time.Time) Summary {
 		switch e.Kind {
 		case store.KindFocus:
 			s.FocusToday += int(math.Round(e.Amount))
+		case store.KindActive:
+			s.ActiveToday += int(math.Round(e.Amount))
 		default:
 			s.Today++
 		}
@@ -113,4 +124,16 @@ func dayOf(t time.Time) civilDay {
 func (c civilDay) prev() civilDay {
 	// Noon avoids daylight-saving edge cases when stepping back a day.
 	return dayOf(time.Date(c.y, c.m, c.d, 12, 0, 0, 0, time.UTC).AddDate(0, 0, -1))
+}
+
+// Clock writes minutes the short way: "45m", "2h", "2h10".
+func Clock(minutes int) string {
+	switch h, m := minutes/60, minutes%60; {
+	case h == 0:
+		return fmt.Sprintf("%dm", m)
+	case m == 0:
+		return fmt.Sprintf("%dh", h)
+	default:
+		return fmt.Sprintf("%dh%02d", h, m)
+	}
 }

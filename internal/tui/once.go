@@ -128,6 +128,9 @@ func onceInfo(t Theme, sceneName string, season scene.Season, night bool, growth
 		if s.FocusToday > 0 {
 			today += fmt.Sprintf(" · %d min focus", s.FocusToday)
 		}
+		if s.ActiveToday > 0 {
+			today += " · " + progress.Clock(s.ActiveToday) + " active"
+		}
 		lines = append(lines,
 			label("today")+t.Accent.Render(today),
 			label("streak")+t.Accent.Render(plural(s.Streak, "day")),

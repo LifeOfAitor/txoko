@@ -155,3 +155,31 @@ func TestPrevAcrossMonthAndDST(t *testing.T) {
 		t.Errorf("prev across DST = %+v", got)
 	}
 }
+
+func TestActiveTime(t *testing.T) {
+	active := func(at time.Time, minutes float64) store.Event {
+		return store.Event{Kind: store.KindActive, Repo: "computer", Ref: at.String(), At: at, Amount: minutes}
+	}
+	events := []store.Event{active(daysAgo(0, 9), 60), active(daysAgo(0, 10), 35), active(daysAgo(1, 9), 20)}
+	s := Compute(events, now)
+	if s.ActiveToday != 95 || s.Today != 0 || s.FocusToday != 0 {
+		t.Errorf("ActiveToday = %d, Today = %d, FocusToday = %d; want 95, 0, 0", s.ActiveToday, s.Today, s.FocusToday)
+	}
+	if s.Streak != 2 {
+		t.Errorf("days at the computer keep the streak: %d", s.Streak)
+	}
+	// A fresh hour at the computer is worth exactly one fresh commit.
+	hour := Compute([]store.Event{active(now, 60)}, now).Growth
+	commit := Compute(commitsAt(now), now).Growth
+	if math.Abs(hour-commit) > 1e-9 {
+		t.Errorf("an hour active = %v growth, one commit = %v", hour, commit)
+	}
+}
+
+func TestClock(t *testing.T) {
+	for minutes, want := range map[int]string{0: "0m", 45: "45m", 60: "1h", 65: "1h05", 130: "2h10", 600: "10h"} {
+		if got := Clock(minutes); got != want {
+			t.Errorf("Clock(%d) = %q, want %q", minutes, got, want)
+		}
+	}
+}

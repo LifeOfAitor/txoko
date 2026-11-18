@@ -224,3 +224,38 @@ func TestDefaultPath(t *testing.T) {
 		t.Errorf("fallback path = %s", p)
 	}
 }
+
+// TestAddActive: minutes in the same hour add up in one event; another
+// hour is another event.
+func TestAddActive(t *testing.T) {
+	ctx := context.Background()
+	s := open(t)
+	nine := time.Date(2026, 11, 18, 9, 0, 0, 0, time.UTC)
+	for range 3 {
+		if err := s.AddActive(ctx, nine, 1); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := s.AddActive(ctx, nine.Add(time.Hour), 5); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.Since(ctx, nine)
+	if err != nil || len(got) != 2 {
+		t.Fatalf("got %+v, %v", got, err)
+	}
+	if got[0].Kind != KindActive || got[0].Amount != 3 || !got[0].At.Equal(nine) || got[1].Amount != 5 {
+		t.Errorf("got %+v", got)
+	}
+	for _, bad := range []struct {
+		hour    time.Time
+		minutes float64
+	}{{time.Time{}, 1}, {nine, 0}, {nine, -2}} {
+		if err := s.AddActive(ctx, bad.hour, bad.minutes); !errors.Is(err, ErrInvalidEvent) {
+			t.Errorf("AddActive(%v, %v) = %v", bad.hour, bad.minutes, err)
+		}
+	}
+	_ = s.Close()
+	if err := s.AddActive(ctx, nine, 1); err == nil {
+		t.Error("a closed database is an error")
+	}
+}
