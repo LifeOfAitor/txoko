@@ -43,41 +43,13 @@ func Once(w io.Writer, o OnceOptions) error {
 	if o.Width <= 0 || o.Height <= 0 {
 		o.Width, o.Height = OnceWidth, OnceHeight
 	}
-	if o.Now == nil {
-		o.Now = time.Now
-	}
-	if o.Seed == 0 {
-		o.Seed = DefaultSeed()
-	}
 	theme := PlainTheme()
 	if o.Color {
 		theme = DefaultTheme()
 	}
-
-	now := o.Now()
-	season := scene.SeasonOf(now)
-	if s, ok := scene.ParseSeason(o.Season); ok {
-		season = s
-	}
-	night := now.Hour() < 7 || now.Hour() >= 20
-	switch o.Sky {
-	case "day":
-		night = false
-	case "night":
-		night = true
-	}
-	idx, _ := sceneIndex(o.Scene)
-
-	moon := randomMoon()
-	if o.MoonPhase != nil {
-		moon = *o.MoonPhase
-	}
-	c := canvas.New(o.Width, o.Height)
-	scenes[idx].Draw(c, o.Seed, scene.State{
-		Growth: clamp01(o.Growth), Night: night, Season: season, MoonPhase: moon,
-	})
-	art := renderCanvas(c, theme)
-	info := onceInfo(theme, scenes[idx].Name(), season, night, clamp01(o.Growth), o.Summary, now)
+	f := still(o)
+	art := renderCanvas(f.canvas, theme)
+	info := onceInfo(theme, f.scene, f.season, f.night, clamp01(o.Growth), o.Summary, f.now)
 
 	// Info sits to the right of the scene, centered vertically.
 	top := max(0, (len(art)-len(info))/2)
@@ -91,6 +63,50 @@ func Once(w io.Writer, o OnceOptions) error {
 	}
 	_, err := io.WriteString(w, trimLines(out.String()))
 	return err
+}
+
+// stillFrame is a scene drawn once, and what it was drawn for.
+type stillFrame struct {
+	canvas *canvas.Canvas
+	scene  string
+	season scene.Season
+	night  bool
+	now    time.Time
+}
+
+// still draws a single frame of the scene o asks for: in o's season, or
+// the calendar's; by day or night as asked, or as the clock says.
+func still(o OnceOptions) stillFrame {
+	if o.Now == nil {
+		o.Now = time.Now
+	}
+	if o.Seed == 0 {
+		o.Seed = DefaultSeed()
+	}
+	f := stillFrame{now: o.Now()}
+	f.season = scene.SeasonOf(f.now)
+	if s, ok := scene.ParseSeason(o.Season); ok {
+		f.season = s
+	}
+	f.night = f.now.Hour() < 7 || f.now.Hour() >= 20
+	switch o.Sky {
+	case "day":
+		f.night = false
+	case "night":
+		f.night = true
+	}
+	idx, _ := sceneIndex(o.Scene)
+	f.scene = scenes[idx].Name()
+
+	moon := randomMoon()
+	if o.MoonPhase != nil {
+		moon = *o.MoonPhase
+	}
+	f.canvas = canvas.New(o.Width, o.Height)
+	scenes[idx].Draw(f.canvas, o.Seed, scene.State{
+		Growth: clamp01(o.Growth), Night: f.night, Season: f.season, MoonPhase: moon,
+	})
+	return f
 }
 
 func onceInfo(t Theme, sceneName string, season scene.Season, night bool, growth float64, s *progress.Summary, now time.Time) []string {

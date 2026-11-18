@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 176 146" width="176" height="146">
+<rect width="100%" height="100%" rx="14" fill="#303446"/>
+<g font-family="'JetBrains Mono','SF Mono',Menlo,'DejaVu Sans Mono',monospace" font-size="16">
+<text x="28.0 38.0 48.0 58.0" y="43.2" fill="#a6d189" font-weight="bold">&amp;&lt;a&gt;</text>
+<text x="78.0" y="43.2" fill="#c6d0f5">x</text>
+<text x="88.0" y="43.2" fill="#b5bfe2" opacity="0.55">~</text>
+<text x="98.0" y="43.2" fill="#a6d189" opacity="0.55">%</text>
+<rect x="28" y="48" width="10" height="20" fill="#e5c890" shape-rendering="crispEdges"/>
+<rect x="38" y="48" width="10" height="10" fill="#e5c890" shape-rendering="crispEdges"/>
+<rect x="48" y="58" width="10" height="10" fill="#e5c890" shape-rendering="crispEdges"/>
+<rect x="58" y="48" width="10" height="20" fill="#e5c890" shape-rendering="crispEdges" fill-opacity="0.3"/>
+<text x="28.0 38.0" y="83.2" fill="#f4b8e4" font-weight="bold">✿✿</text>
+<text x="58.0" y="83.2" fill="#f4b8e4" font-weight="bold">✿</text>
+<text x="28.0" y="125.0" fill="#626880" font-size="13" opacity="0.8">txoko · test</text>
+</g>
+</svg>
