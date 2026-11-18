@@ -25,7 +25,7 @@
 - 🌙 **Soft nights** — the tree dims, a big pixel-art moon rises, stars twinkle in four sizes and now and then a shooting star crosses the sky.
 - 🍅 **Focus sessions** — `txoko --pomodoro 50` plants a seed that reaches full bloom as your session ends.
 - 📈 **Grows with your work** — with `--work`, every commit and focus session makes the tree a little fuller; take a break and it slowly thins out (it never dies).
-- 🖥️ **Everywhere** — a neofetch-style greeting for your shell, a corner of tmux, a line in your status bar.
+- 🖥️ **Everywhere** — a neofetch-style greeting for your shell, a corner of tmux, a line in your status bar, or a picture to share (`txoko snap`).
 - 🎨 **Fits your rice** — only your terminal's 16 colors, so it matches Catppuccin, Gruvbox, Rosé Pine or whatever you run. Every key is always listed on screen.
 - 🔒 **Local first** — your activity never leaves your machine.
 
@@ -190,6 +190,7 @@ A typo such as `sene = "bonsai"` is reported instead of silently ignored.
 | `txoko hook status` | check whether the hook is installed |
 | `txoko import [dir...]` | import your commits from the last 30 days (`--days N`) |
 | `txoko stats` | print growth, today's commits and your streak |
+| `txoko snap [-o FILE]` | save the scene as an SVG picture, for a README or a wallpaper (takes the `--once` flags) |
 
 ## How it works
 
@@ -217,7 +218,7 @@ A typo such as `sene = "bonsai"` is reported instead of silently ignored.
 - [x] **3 · Everywhere** — neofetch-style greeting, tmux status line and a settings file
 - [x] **4 · First release** — `brew install` via a Homebrew tap
 - [x] **5 · More scenes** — a floating island and a forgotten arch
-- [ ] **6 · Your year** — a landscape built from your GitHub contribution calendar
+- [x] **6 · Share it** — `txoko snap` saves your scene as an SVG picture
 - [ ] **7 · Activity daemon** — active-time tracking as a background service
 - [ ] **8 · MCP server** — ask your AI assistant about your progress
 - [ ] **9 · Image to ASCII** — turn wallpapers into scene backgrounds

@@ -53,6 +53,10 @@ Commands:
   import [dir...]          import your recent commits from repositories
   stats                    print your activity summary
   status [--format F]      one line for tmux or your prompt, e.g. "🌳 72%% · 5d"
+  snap [-o FILE] [flags]   save the scene as an SVG picture (default
+                           txoko.svg; -o - writes it to stdout). Takes
+                           --scene, --season, --sky, --growth, --work,
+                           --seed and --size (default 60x22)
   log commit               record HEAD (used by the git hook)
 
 Flags:
@@ -108,6 +112,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 			return runStatus(rest, stdout, stderr)
 		case "config":
 			return runConfig(rest, stdout, stderr)
+		case "snap":
+			return runSnap(rest, stdout, stderr)
 		case "help":
 			fmt.Fprint(stdout, usage)
 			return ExitOK
@@ -159,16 +165,8 @@ func runScene(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprint(stdout, version.Get())
 		return ExitOK
 	}
-	if opts.Growth < 0 || opts.Growth > 1 {
-		return usageError(stderr, fmt.Sprintf("--growth must be between 0 and 1, got %v", opts.Growth))
-	}
-	if opts.Scene != "" && !slices.Contains(tui.SceneNames(), opts.Scene) {
-		return usageError(stderr, fmt.Sprintf("unknown scene %q (available: %s)",
-			opts.Scene, strings.Join(tui.SceneNames(), ", ")))
-	}
-
-	if _, ok := scene.ParseSeason(opts.Season); opts.Season != "" && !ok {
-		return usageError(stderr, fmt.Sprintf("unknown season %q (use spring, summer, autumn or winter)", opts.Season))
+	if msg := checkLook(opts); msg != "" {
+		return usageError(stderr, msg)
 	}
 	// Asking for a hand-set growth or a pomodoro on the command line beats
 	// `work = true` in the config file.
@@ -177,9 +175,6 @@ func runScene(args []string, stdout, stderr io.Writer) int {
 	}
 	if once && !flagSet(fs, "work") && !flagSet(fs, "growth") {
 		work = cfg.Once.Work
-	}
-	if opts.Sky != "" && opts.Sky != "day" && opts.Sky != "night" {
-		return usageError(stderr, fmt.Sprintf("--sky takes day or night, got %q", opts.Sky))
 	}
 	if work && flagSet(fs, "growth") {
 		return usageError(stderr, "--growth sets the scene by hand, so it can't be combined with --work")
@@ -337,6 +332,24 @@ func recordFocus(length time.Duration) error {
 		Amount: float64(minutes),
 	})
 	return err
+}
+
+// checkLook checks the flags that pick what a scene looks like, and says
+// what's wrong, if anything.
+func checkLook(opts tui.Options) string {
+	if opts.Growth < 0 || opts.Growth > 1 {
+		return fmt.Sprintf("--growth must be between 0 and 1, got %v", opts.Growth)
+	}
+	if opts.Scene != "" && !slices.Contains(tui.SceneNames(), opts.Scene) {
+		return fmt.Sprintf("unknown scene %q (available: %s)", opts.Scene, strings.Join(tui.SceneNames(), ", "))
+	}
+	if _, ok := scene.ParseSeason(opts.Season); opts.Season != "" && !ok {
+		return fmt.Sprintf("unknown season %q (use spring, summer, autumn or winter)", opts.Season)
+	}
+	if opts.Sky != "" && opts.Sky != "day" && opts.Sky != "night" {
+		return fmt.Sprintf("--sky takes day or night, got %q", opts.Sky)
+	}
+	return ""
 }
 
 // summarize reads the recent events and computes what the scene shows.
