@@ -42,6 +42,7 @@ demo: build ## Record the README images with VHS (brew install vhs)
 		case $$tape in */settings.tape) continue;; esac; \
 		echo "  recording $$tape"; vhs $$tape >/dev/null || exit 1; \
 	done
+	@./bin/$(BINARY) snap --scene arch --season autumn --sky night --seed 3 -o docs/images/snap-arch.svg >/dev/null
 	@rm -f docs/images/season-*.gif docs/images/scene-*.gif docs/images/once.gif docs/images/tmux.gif
 	@tmux -L txoko-readme kill-server 2>/dev/null || true
 
