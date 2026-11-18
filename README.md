@@ -15,6 +15,28 @@
 
 *Txoko* means "little corner" in Basque. It's an ambient terminal app with a bonsai that **really grows**, branch by branch: shape it by hand, let your commits and focus sessions grow it, or keep it as a quiet corner of your tmux. It dresses for the season, dims down at night under a big moon, and uses your terminal's own colors, so it fits right into your rice.
 
+## Quick start
+
+```sh
+brew install LifeOfAitor/tap/txoko
+txoko                                 # a bonsai you grow by hand: press + and -
+txoko hook install && txoko --work    # or let your commits grow it
+```
+
+That's all you need. Every key is listed at the bottom of the screen; press <kbd>q</kbd> to quit.
+
+## What you can do with it
+
+| | | |
+|---|---|---|
+| 🌱 | **[Grow it by hand](#grow-it-by-hand)** | a calm toy: shape the tree, flip the season, call the night |
+| 📈 | **[Let your work grow it](#let-your-work-grow-it)** | every commit makes it a little fuller |
+| 🍅 | **[Focus sessions](#focus-sessions)** | a new tree blooms as your pomodoro runs |
+| 👋 | **[A greeting in your shell](#a-greeting-in-your-shell)** | a neofetch-style scene each time you open a terminal |
+| 🪟 | **[A corner of tmux](#a-corner-of-tmux)** | a narrow pane that keeps growing while you work |
+| 📊 | **[Your status bar](#your-status-bar-or-prompt)** | `🍂 77% · 2d` in tmux or your prompt |
+| 🖼️ | **[Share a picture](#share-a-picture)** | save your scene as an image for a README or a wallpaper |
+
 > [!NOTE]
 > txoko is young and growing fast. Star the repo to watch it grow, and [open an issue](https://github.com/LifeOfAitor/txoko/issues) if something looks off.
 
@@ -83,9 +105,16 @@ cd txoko && make build
 
 ## Usage
 
-### Shape it by hand
+### Grow it by hand
 
 By default txoko is a visual toy: you decide how grown the scene is. All the keys are always listed at the bottom of the screen.
+
+```sh
+txoko                                    # your bonsai, as grown as you left it
+txoko --scene island                     # start on another scene
+txoko --season winter --sky night        # a snowy night, whatever the date
+txoko --growth 1 --seed 1234             # fully grown, with a layout you like
+```
 
 | Key | Action |
 |---|---|
@@ -97,7 +126,7 @@ By default txoko is a visual toy: you decide how grown the scene is. All the key
 | <kbd>space</kbd> | pause the animation |
 | <kbd>q</kbd> | quit |
 
-Flags: `--season`, `--sky day|night`, `--growth 0..1`, `--seed N` (a layout of your choice) and `--scene`.
+Every machine gets its own tree; `--seed N` picks another one, and <kbd>r</kbd> plants a new one while it runs.
 
 ### Let your work grow it
 
@@ -109,7 +138,16 @@ txoko --work                # the tree now grows with your activity
 
 Make a commit in any repository and watch the tree grow a little within a few seconds. The footer shows today's commits and your streak.
 
-### Focus sessions 🍅
+```sh
+txoko stats                 # growth, today's commits and your streak, as text
+txoko import --days 90 ~/code/project   # look further back
+txoko hook status           # is the hook installed?
+txoko hook uninstall        # remove it again (your history is kept)
+```
+
+Take a few days off and the tree slowly thins out, but it never dies.
+
+### Focus sessions
 
 ```sh
 txoko --pomodoro 50               # a new tree grows from a seed to full bloom in 50 minutes
@@ -118,9 +156,9 @@ txoko --pomodoro 25 --break 5     # classic pomodoro with a 5-minute rest
 
 <kbd>space</kbd> pauses (paused time doesn't count), and quitting mid-session asks twice so a stray <kbd>q</kbd> never throws away your focus. When the time is up you get a desktop notification and <kbd>enter</kbd> plants another tree. Completed sessions also grow your `--work` tree: 25 minutes of focus count like one commit.
 
-### Everywhere: your shell, a tmux corner, your status bar
+### A greeting in your shell
 
-**A greeting when you open a terminal**, in `~/.zshrc`:
+Add this to `~/.zshrc` (or `~/.bashrc`) to see your scene every time you open a terminal:
 
 ```sh
 txoko --once --work
@@ -128,9 +166,11 @@ txoko --once --work
 
 <img src="docs/images/once.png" alt="txoko --once: an autumn bonsai under a full moon and stars, with an info panel beside it" width="720">
 
-`--size 46x18` changes its size. Without `--work` it shows a fully grown tree.
+`--size 46x18` changes its size, and any scene flag works too (`--once --scene arch`). Without `--work` it shows a fully grown tree.
 
-**A little corner in tmux.** The view adapts to narrow panes: the title shortens and the keys wrap onto extra lines, so every control stays visible.
+### A corner of tmux
+
+The view adapts to narrow panes: the title shortens and the keys wrap onto extra lines, so every control stays visible.
 
 ```sh
 tmux split-window -h -l 32 'txoko --work'
@@ -138,7 +178,9 @@ tmux split-window -h -l 32 'txoko --work'
 
 <img src="docs/images/tmux.png" alt="tmux with git log on the left, an autumn bonsai in a narrow pane on the right, and 🍂 67% · 14d in the status bar" width="820">
 
-**Your status bar or prompt**, refreshed every few seconds (bottom right in the screenshot above):
+### Your status bar or prompt
+
+Refreshed every few seconds (bottom right in the screenshot above):
 
 ```sh
 # ~/.tmux.conf
@@ -146,7 +188,34 @@ set -g status-interval 10
 set -g status-right '#(txoko status) '
 ```
 
-`txoko status` prints `🍂 77% · 2d`. Shape it with `--format` and the placeholders `{icon}` `{growth}` `{bar}` `{today}` `{focus}` `{streak}` `{season}`, for example `txoko status --format '{icon} {bar} {today}c'` → `🍂 ▰▰▰▰▱ 22c`.
+`txoko status` prints `🍂 77% · 2d`. Shape it with `--format` and these placeholders:
+
+| Placeholder | Example | What it is |
+|---|---|---|
+| `{icon}` | 🍂 | 🌱 or 🌿 while the tree is young, then the season's: 🌸 🌳 🍂 ❄️ |
+| `{growth}` | 77 | how grown the tree is, in percent |
+| `{bar}` | ▰▰▰▰▱ | the same, as a little bar |
+| `{today}` | 3 | today's commits |
+| `{focus}` | 50 | today's minutes of focus |
+| `{streak}` | 2 | days in a row with any activity |
+| `{season}` | autumn | the season's name |
+
+For example `txoko status --format '{icon} {bar} {today}c'` prints `🍂 ▰▰▰▰▱ 22c`.
+
+### Share a picture
+
+`txoko snap` saves your scene as an SVG picture: sharp at any size, for a README, a blog post or a wallpaper.
+
+```sh
+txoko snap                                              # txoko.svg, fully grown
+txoko snap -o arch.svg --scene arch --season autumn --sky night
+txoko snap --work -o today.svg                          # grown by your real activity
+txoko snap -o - --size 80x30 > big.svg                  # any size, to stdout
+```
+
+<img src="docs/images/snap-arch.svg" alt="An SVG made by txoko snap: the arch on an autumn night, red ivy around it and the moon behind a young tree" width="560">
+
+Pictures use the Catppuccin Frappé palette, since an image can't borrow your terminal's colors.
 
 ### Settings
 
@@ -175,22 +244,44 @@ format = "{icon} {growth}% · {streak}d"
 
 A typo such as `sene = "bonsai"` is reported instead of silently ignored.
 
-### All commands
+## Reference
 
-| Command | What it does |
-|---|---|
-| `txoko` | open your scene and grow it by hand |
-| `txoko --work` | open your scene, grown by your real activity |
-| `txoko --pomodoro M [--break M]` | focus session: a new tree blooms as the minutes pass |
-| `txoko --once [--work]` | print the scene once with an info panel (for `.zshrc`) |
-| `txoko status [--format F]` | one line for tmux or your prompt |
-| `txoko config [init]` | show or create the settings file |
-| `txoko hook install` | record every commit through a global git hook |
-| `txoko hook uninstall` | remove the hook (your history is kept) |
-| `txoko hook status` | check whether the hook is installed |
-| `txoko import [dir...]` | import your commits from the last 30 days (`--days N`) |
-| `txoko stats` | print growth, today's commits and your streak |
-| `txoko snap [-o FILE]` | save the scene as an SVG picture, for a README or a wallpaper (takes the `--once` flags) |
+### Commands
+
+| Command | What it does | Example |
+|---|---|---|
+| `txoko` | open your scene and grow it by hand | `txoko --scene island` |
+| `txoko --work` | open your scene, grown by your real activity | `txoko --work --scene arch` |
+| `txoko --pomodoro M` | a focus session: a new tree blooms as the minutes pass | `txoko --pomodoro 25 --break 5` |
+| `txoko --once` | print the scene once with an info panel (for `.zshrc`) | `txoko --once --work --size 46x18` |
+| `txoko snap` | save the scene as an SVG picture | `txoko snap -o bonsai.svg --sky night` |
+| `txoko status` | one line for tmux or your prompt | `txoko status --format '{icon} {growth}%'` |
+| `txoko stats` | print growth, today's commits and your streak | `txoko stats` |
+| `txoko hook install` | record every commit through a global git hook | `txoko hook install` |
+| `txoko hook status` | check whether the hook is installed | `txoko hook status` |
+| `txoko hook uninstall` | remove the hook (your history is kept) | `txoko hook uninstall` |
+| `txoko import [dir...]` | import your recent commits (30 days, or `--days N`) | `txoko import --days 90 ~/code/*` |
+| `txoko config` | show where the settings file is, and check it | `txoko config` |
+| `txoko config init` | create it, with every setting explained | `txoko config init` |
+
+### Flags
+
+| Flag | What it does | Works with |
+|---|---|---|
+| `--scene S` | `bonsai`, `island`, `arch` or `garden` | `txoko`, `--once`, `snap` |
+| `--season S` | `spring`, `summer`, `autumn` or `winter` (default: today's) | `txoko`, `--once`, `snap` |
+| `--sky S` | `day` or `night` (default: follows the clock) | `txoko`, `--once`, `snap` |
+| `--growth N` | how grown it starts, from `0` to `1` | `txoko`, `--once`, `snap` |
+| `--seed N` | another layout: every number is a different tree | `txoko`, `--once`, `snap` |
+| `--work` | grow from your recorded commits and focus | `txoko`, `--once`, `snap` |
+| `--size WxH` | the scene's size in cells | `--once` (34x14), `snap` (60x22) |
+| `--pomodoro M` | a focus session of M minutes | `txoko` |
+| `--break M` | rest M minutes after each session | `--pomodoro` |
+| `-o FILE` | where to save the picture (`-` for stdout) | `snap` |
+| `--format F` | the status line's shape | `status` |
+| `--days N` | how far back to import | `import` |
+| `-v`, `--version` | print the version | `txoko` |
+| `-h`, `--help` | show the help | everything |
 
 ## How it works
 
@@ -219,9 +310,9 @@ A typo such as `sene = "bonsai"` is reported instead of silently ignored.
 - [x] **4 · First release** — `brew install` via a Homebrew tap
 - [x] **5 · More scenes** — a floating island and a forgotten arch
 - [x] **6 · Share it** — `txoko snap` saves your scene as an SVG picture
-- [ ] **7 · Activity daemon** — active-time tracking as a background service
-- [ ] **8 · MCP server** — ask your AI assistant about your progress
-- [ ] **9 · Image to ASCII** — turn wallpapers into scene backgrounds
+- [ ] **7 · Active time** — a small background service, so time at your desk grows the tree too, not only commits
+
+Ideas and feedback are welcome in the [issues](https://github.com/LifeOfAitor/txoko/issues).
 
 ## Development
 
