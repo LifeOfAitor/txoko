@@ -26,7 +26,8 @@ type Kind string
 // Kinds of events txoko records.
 const (
 	KindCommit Kind = "commit"
-	KindFocus  Kind = "focus" // a completed pomodoro session
+	KindFocus  Kind = "focus"  // a completed pomodoro session
+	KindActive Kind = "active" // minutes at the computer within one hour
 )
 
 // Event is one piece of activity.
@@ -153,6 +154,23 @@ func (s *Store) Add(ctx context.Context, e Event) (bool, error) {
 		return false, err
 	}
 	return n == 1, nil
+}
+
+// AddActive adds minutes at the computer to the hour starting at hour.
+// Each hour is a single event whose amount grows as the minutes come in,
+// so a day at the desk is a handful of rows, not hundreds.
+func (s *Store) AddActive(ctx context.Context, hour time.Time, minutes float64) error {
+	if hour.IsZero() || minutes <= 0 {
+		return ErrInvalidEvent
+	}
+	_, err := s.db.ExecContext(ctx, `
+		INSERT INTO events (kind, repo, ref, at, amount) VALUES (?, 'computer', ?, ?, ?)
+		ON CONFLICT (kind, ref) DO UPDATE SET amount = amount + excluded.amount`,
+		string(KindActive), hour.UTC().Format("2006-01-02T15"), hour.Unix(), minutes)
+	if err != nil {
+		return fmt.Errorf("adding active time: %w", err)
+	}
+	return nil
 }
 
 // Since returns every event at or after t, oldest first.

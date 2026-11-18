@@ -207,6 +207,7 @@ func runStats(args []string, stdout, stderr io.Writer) int {
 	fmt.Fprintf(stdout, "txoko · stats\n")
 	fmt.Fprintf(stdout, "  growth  %s%s %3.0f%%\n", strings.Repeat("▰", filled), strings.Repeat("▱", 10-filled), s.Growth*100)
 	fmt.Fprintf(stdout, "  today   %s, %d min of focus\n", plural(s.Today, "commit"), s.FocusToday)
+	fmt.Fprintf(stdout, "  active  %s at the computer today\n", progress.Clock(s.ActiveToday))
 	fmt.Fprintf(stdout, "  streak  %s\n", plural(s.Streak, "day"))
 	fmt.Fprintf(stdout, "  recent  %s in the last %d days\n", plural(s.Recent, "commit"), int(progress.Window/(24*time.Hour)))
 	return ExitOK

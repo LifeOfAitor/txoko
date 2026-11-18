@@ -16,7 +16,7 @@ import (
 const DefaultStatusFormat = "{icon} {growth}% · {streak}d"
 
 // statusFields documents the placeholders --format understands.
-var statusFields = []string{"icon", "growth", "bar", "today", "focus", "streak", "season"}
+var statusFields = []string{"icon", "growth", "bar", "today", "focus", "active", "streak", "season"}
 
 var placeholder = regexp.MustCompile(`\{([a-z]+)\}`)
 
@@ -64,6 +64,7 @@ func formatStatus(format string, s progress.Summary, season scene.Season) (strin
 		"bar":    strings.Repeat("▰", filled) + strings.Repeat("▱", 5-filled),
 		"today":  fmt.Sprint(s.Today),
 		"focus":  fmt.Sprint(s.FocusToday),
+		"active": progress.Clock(s.ActiveToday),
 		"streak": fmt.Sprint(s.Streak),
 		"season": season.String(),
 	}

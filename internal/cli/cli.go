@@ -51,6 +51,10 @@ Commands:
   hook uninstall           remove the hook again
   hook status              show whether the hook is installed
   import [dir...]          import your recent commits from repositories
+  daemon install           grow with your time at the computer, too (starts
+                           a small background service when you log in)
+  daemon uninstall         stop it again
+  daemon status            show whether it's running, and today's active time
   stats                    print your activity summary
   status [--format F]      one line for tmux or your prompt, e.g. "🌳 72%% · 5d"
   snap [-o FILE] [flags]   save the scene as an SVG picture (default
@@ -114,6 +118,8 @@ func Run(args []string, stdout, stderr io.Writer) int {
 			return runConfig(rest, stdout, stderr)
 		case "snap":
 			return runSnap(rest, stdout, stderr)
+		case "daemon":
+			return runDaemon(rest, stdout, stderr)
 		case "help":
 			fmt.Fprint(stdout, usage)
 			return ExitOK

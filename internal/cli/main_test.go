@@ -1,10 +1,14 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
+
+	"github.com/LifeOfAitor/txoko/internal/idle"
 )
 
 // TestMain points every path txoko uses — database, config and git's global
@@ -30,6 +34,10 @@ func TestMain(m *testing.M) {
 	notifySend = func(string, string) error { return nil }
 	// Nor depend on whether a txoko happens to be on the developer's PATH.
 	lookPath = func(string) (string, error) { return "", os.ErrNotExist }
+	// Nor ever install a real background service, or read the real idle time.
+	serviceRun = func(string, ...string) error { return errors.New("no services in tests") }
+	homeDir = func() (string, error) { return filepath.Join(tmp, "home"), nil }
+	idleReader = func() idle.Reader { return func() (time.Duration, error) { return 0, idle.ErrUnsupported } }
 
 	code := m.Run()
 	_ = os.RemoveAll(tmp)
